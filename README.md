@@ -37,13 +37,24 @@ public interface IRoomInfo{
 - 调用ISkillServer接口的方法时，会调用ISkillServer$$Delegate实现类的方法，而它是apt生成的，如何关联到SmartFlyper来发送协议呢？
 - 使用SmartFlyperDelegate类调用SmartFlyper的Create方法。
 - 而SmartFlyper会调用ISmartFlyperFactory的实现类找到具体的api代理方法，而每个module下面都有自己的api工厂类，如SmartFlyper$$main_app，在app模块下自动生成的。
+
 ### 如何使用？
+
+*加入到root build.gradle中*
+```groovy
+allprojects {
+		repositories {
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
 > 1.在需要的使用到注解的module中引入smartflyper annotation和compiler的依赖
 ```gradle
-implementation "com.yy.mobile.peiwan:annotation:${mainapi_version}"
-    annotationProcessor "com.yy.mobile.peiwan:compiler:${mainapi_version}"
+dependencies {
+    implementation 'com.github.ly-android.smartflyper:annotation:1.0.0'
+    annotationProcessor 'com.github.ly-android.smartflyper:compiler:1.0.0'
+  }
 ```
-*mainapi_version*是陪玩main插件的版本
 
 > 2.然后在当前module的android节点defaultConfigs下面配置moduleName(保证唯一)
 
@@ -89,5 +100,6 @@ public interface IRoomInfo{
 *注意*
 - 在接口中不能有其他非注解形式的抽象方法，否则编译不过
 - LazyInit注解默认是false，表示是否需要延迟创建api实现类;如果true,在使用SmartFlyper.getInstance().Create()的时候才会实例化。
+
 
 
