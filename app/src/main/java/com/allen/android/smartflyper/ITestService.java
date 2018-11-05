@@ -1,12 +1,13 @@
 package com.allen.android.smartflyper;
 
-import android.database.Observable;
 
 import com.yy.core.room.protocol.BaseEntity;
 import com.yy.core.yyp.smart.SmartObserverResult;
 import com.yy.core.yyp.smart.anotation.SmartBroadCast;
 import com.yy.core.yyp.smart.anotation.SmartParam;
 import com.yy.core.yyp.smart.anotation.SmartUri;
+
+import io.reactivex.Observable;
 
 /**
  * Created by liyong on 2018/11/5.

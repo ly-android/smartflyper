@@ -11,7 +11,7 @@ android {
     testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     javaCompileOptions {
       annotationProcessorOptions {
-        arguments = [moduleName: "main_core"]
+        arguments = [moduleName: "app"]
       }
     }
   }
@@ -26,6 +26,7 @@ android {
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
   implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+  implementation "io.reactivex.rxjava2:rxjava:2.0.8"
   implementation project(':annotation')
   annotationProcessor project(':compiler')
 }
