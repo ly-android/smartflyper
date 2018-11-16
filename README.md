@@ -51,8 +51,8 @@ allprojects {
 > 1.在需要的使用到注解的module中引入smartflyper annotation和compiler的依赖
 ```gradle
 dependencies {
-    implementation 'com.github.ly-android.smartflyper:annotation:1.0.0'
-    annotationProcessor 'com.github.ly-android.smartflyper:compiler:1.0.0'
+    implementation 'com.github.ly-android.smartflyper:annotation:1.0.1'
+    annotationProcessor 'com.github.ly-android.smartflyper:compiler:1.0.1'
   }
 ```
 
