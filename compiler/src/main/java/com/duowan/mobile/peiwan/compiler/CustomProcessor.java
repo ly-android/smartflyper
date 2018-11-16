@@ -101,7 +101,9 @@ public class CustomProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         mMessager.printMessage(Diagnostic.Kind.NOTE, "process...");
-        parseAnonation(roundEnvironment);
+        if (!roundEnvironment.processingOver()) {
+            parseAnonation(roundEnvironment);
+        }
         return true;
     }
 
