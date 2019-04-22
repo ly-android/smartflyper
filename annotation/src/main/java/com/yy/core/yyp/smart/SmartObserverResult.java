@@ -18,9 +18,7 @@ public abstract class SmartObserverResult<T> implements Observer<T> {
     public abstract void onNext(@Nullable T t);
 
     @Override
-    public void onError(Throwable e){
-
-    }
+    public abstract void onError(Throwable e);
 
     @Override
     public void onComplete() {
