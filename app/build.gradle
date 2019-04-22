@@ -29,6 +29,6 @@ dependencies {
   implementation "io.reactivex.rxjava2:rxjava:2.0.8"
 //  implementation project(':annotation')
 //  annotationProcessor project(':compiler')
-  implementation 'com.github.ly-android.smartflyper:annotation:1.0.3'
-  annotationProcessor 'com.github.ly-android.smartflyper:compiler:1.0.3'
+  implementation 'com.github.ly-android.smartflyper:annotation:1.0.4'
+  annotationProcessor 'com.github.ly-android.smartflyper:compiler:1.0.4'
 }
