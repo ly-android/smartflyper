@@ -38,7 +38,8 @@ public interface IRoomInfo{
 - 使用SmartFlyperDelegate类调用SmartFlyper的Create方法。
 - 而SmartFlyper会调用ISmartFlyperFactory的实现类找到具体的api代理方法，而每个module下面都有自己的api工厂类，如SmartFlyper$$main_app，在app模块下自动生成的。
 
-### 如何使用？
+### 如何使用？[![](https://jitpack.io/v/ly-android/smartflyper.svg)](https://jitpack.io/#ly-android/smartflyper)
+
 
 *加入到root build.gradle中*
 ```groovy
