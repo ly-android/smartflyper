@@ -1,6 +1,7 @@
 package com.yy.core.yyp.smart;
 
 import com.yy.core.room.protocol.BaseEntity;
+import com.yy.core.yyp.smart.anotation.SmartAppender;
 import com.yy.core.yyp.smart.anotation.SmartBroadCast;
 import com.yy.core.yyp.smart.anotation.SmartUri;
 
@@ -26,13 +27,18 @@ public class WrapperMethod {
     public Class paramsTypes;//广播类型保存SmartObserverResult的参数类型
     public Object[] args; //参数列表
 
+    public boolean includeUid = false;
+    public boolean includePf = false;
+    public boolean includeVersion = false;
+
     public WrapperMethod(Builder builder) {
         this.max = builder.max;
         this.min_req = builder.min_req;
         this.min_rsp = builder.min_rsp;
         this.params = builder.params;
-        if (builder.returnTypeParams != null && builder.returnTypeParams.length > 0)
+        if (builder.returnTypeParams != null && builder.returnTypeParams.length > 0) {
             this.returnTypeParams = (Class) builder.returnTypeParams[0];
+        }
         this.isSmartBroadcast = builder.isSmartBroadcast;
         this.paramsTypes = builder.paramsTypes;
         this.args = builder.args;
@@ -52,6 +58,9 @@ public class WrapperMethod {
         boolean isSmartBroadcast;
         Class paramsTypes;
         Object[] args; //参数列表
+        public boolean includeUid = false;
+        public boolean includePf = false;
+        public boolean includeVersion = false;
 
         public Builder(Method method) {
             this.method = method;
@@ -94,6 +103,11 @@ public class WrapperMethod {
                 max = smartBroadCast.max();
                 min_rsp = smartBroadCast.min();
                 isSmartBroadcast = true;
+            } else if (annotation instanceof SmartAppender) {
+                SmartAppender appender = (SmartAppender) annotation;
+                includePf = appender.includePf();
+                includeUid = appender.includeUid();
+                includeVersion = appender.includeVersion();
             } else {
                 throw new AnnotationFormatError("没有加入SmartUri or SmartBroadCast注解");
             }
