@@ -15,6 +15,7 @@ import com.yy.core.yyp.smart.ParamEntity;
 import com.yy.core.yyp.smart.SmartFlyperDelegate;
 import com.yy.core.yyp.smart.WrapperMethod;
 import com.yy.core.yyp.smart.anotation.LazyInit;
+import com.yy.core.yyp.smart.anotation.SmartAppender;
 import com.yy.core.yyp.smart.anotation.SmartBroadCast;
 import com.yy.core.yyp.smart.anotation.SmartJson;
 import com.yy.core.yyp.smart.anotation.SmartMap;
@@ -146,6 +147,7 @@ public class CustomProcessor extends AbstractProcessor {
                     for (ExecutableElement executableElement : executableElements) {
                         SmartUri smartUri = executableElement.getAnnotation(SmartUri.class);
                         SmartBroadCast smartBroadCast = executableElement.getAnnotation(SmartBroadCast.class);
+                        SmartAppender smartAppender = executableElement.getAnnotation(SmartAppender.class);
                         if (smartUri != null || smartBroadCast != null) {
                             List<ParameterSpec> parameterSpecs = new ArrayList<>();
                             for (VariableElement variableElement : executableElement.getParameters()) {
@@ -170,7 +172,11 @@ public class CustomProcessor extends AbstractProcessor {
                             checkAndGenerateCode(typeMirror, methdSpecBuilder);
                             //校验和生成方法形式参数类型
                             generateParamsCode(methodParameters, methdSpecBuilder);
-
+                            if (smartAppender != null) {
+                                methdSpecBuilder.addStatement("wrapperMethod.includeVersion=$L", smartAppender.includeVersion());
+                                methdSpecBuilder.addStatement("wrapperMethod.includeUid=$L", smartAppender.includeUid());
+                                methdSpecBuilder.addStatement("wrapperMethod.includePf=$L", smartAppender.includePf());
+                            }
                             //生成返回值
                             methdSpecBuilder.addStatement("return $T.send(wrapperMethod)", SmartFlyperDelegate.class);
                             methodSpecList.add(methdSpecBuilder.build());
