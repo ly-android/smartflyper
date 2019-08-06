@@ -198,7 +198,9 @@ public class CustomProcessor extends AbstractProcessor {
     }
 
     private void generateFactory() {
-        if (typeElementListMap.isEmpty()) return;
+        if (typeElementListMap.isEmpty()) {
+            return;
+        }
         try {
             FieldSpec.Builder fieldBuild = FieldSpec.builder(ParameterizedTypeName.get(LinkedHashMap.class, String.class, Object.class),
                     "apiMap", Modifier.PRIVATE);
@@ -224,12 +226,18 @@ public class CustomProcessor extends AbstractProcessor {
                 }
             }
 
+
             MethodSpec initApi = MethodSpec.methodBuilder("initApi")
                     .addModifiers(Modifier.PUBLIC)
                     .returns(TypeName.VOID)
                     .addAnnotation(Override.class)
                     .addJavadoc("必须要初始化,保证api不为空")
                     .addCode(builder.build())
+                    .build();
+
+            MethodSpec init = MethodSpec.constructorBuilder()
+                    .addModifiers(Modifier.PUBLIC)
+                    .addStatement("$N()", initApi)
                     .build();
 
             MethodSpec getApi = MethodSpec.methodBuilder("getApi")
@@ -243,12 +251,21 @@ public class CustomProcessor extends AbstractProcessor {
                             "        if (api == null) {\n" +
                             "            try {\n" +
                             "                api = Class.forName(clsName + $S).newInstance();\n" +
+                            "            }catch (java.lang.ClassNotFoundException ex) {\n" +
+                            "                android.util.Log.e(\"SmartFlyperFactory\", \"start get inner class Delegate\");\n" +
+                            "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
+                            "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
+                            "                try {\n" +
+                            "                    api = Class.forName(clsName +\".\"+cls.getSimpleName()+ $S).newInstance();\n" +
+                            "                } catch (Exception e1) {\n" +
+                            "                    $L.e(\"SmartFlyperFactory\", \"getApi inner class error \", e1);\n" +
+                            "                }                                       \n" +
                             "            } catch (Exception e) {\n" +
                             "                $L.e(\"SmartFlyperFactory\", \"getApi error \", e);\n" +
                             "            }\n" +
                             "            apiMap.put(clsName, api);\n" +
                             "        }\n" +
-                            "        return api", SUFFIX_CLASSNAME, "android.util.Log")
+                            "        return api", SUFFIX_CLASSNAME, SUFFIX_CLASSNAME, "android.util.Log", "android.util.Log")
                     .build();
 
             MethodSpec removeApi = MethodSpec.methodBuilder("removeApi")
@@ -270,6 +287,7 @@ public class CustomProcessor extends AbstractProcessor {
                     .addSuperinterface(TypeName.get(ISmartFlyperFactory.class))
                     .addJavadoc("apt自动生成,不需要修改")
                     .addField(fieldBuild.build())
+                    .addMethod(init)
                     .addMethod(initApi)
                     .addMethod(getApi)
                     .addMethod(removeApi)
