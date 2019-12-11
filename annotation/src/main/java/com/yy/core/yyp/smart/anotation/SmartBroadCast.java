@@ -1,5 +1,7 @@
 package com.yy.core.yyp.smart.anotation;
 
+import com.yy.core.yyp.smart.SvcApp;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -23,5 +25,5 @@ public @interface SmartBroadCast {
      *
      * @return
      */
-    int appId() default 0;
+    SvcApp appId() default SvcApp.peiwan;
 }
