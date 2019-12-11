@@ -17,4 +17,11 @@ public @interface SmartBroadCast {
     int max();
 
     int min();
+
+    /**
+     * svc通道appId
+     *
+     * @return
+     */
+    int appId() default 0;
 }

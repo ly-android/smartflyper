@@ -20,7 +20,7 @@ public class MainActivity extends Activity {
 
     public interface InnerService {
         @SmartAppender
-        @SmartUri(max = 101, req = 312, rsp = 313)
+        @SmartUri(max = 101, req = 312, rsp = 313, appId = 60015)
         Observable<String> getRoomInfo();
     }
 }

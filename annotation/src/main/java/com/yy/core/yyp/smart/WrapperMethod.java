@@ -17,6 +17,7 @@ import java.util.Arrays;
 
 public class WrapperMethod {
 
+    public int appId = 0; //svc appId
     public int max = 0;//大类
     public int min_req = 0;//req小类
     public int min_rsp = 0;//rsp小类
@@ -32,6 +33,7 @@ public class WrapperMethod {
     public boolean includeVersion = false;
 
     public WrapperMethod(Builder builder) {
+        this.appId = builder.appId;
         this.max = builder.max;
         this.min_req = builder.min_req;
         this.min_rsp = builder.min_rsp;
@@ -50,6 +52,7 @@ public class WrapperMethod {
 
     static final class Builder {
         Method method;
+        int appId;
         int max;
         int min_req;
         int min_rsp;
@@ -98,11 +101,13 @@ public class WrapperMethod {
                 max = smartUri.max();
                 min_req = smartUri.req();
                 min_rsp = smartUri.rsp();
+                appId = smartUri.appId();
             } else if (annotation instanceof SmartBroadCast) {
                 SmartBroadCast smartBroadCast = (SmartBroadCast) annotation;
                 max = smartBroadCast.max();
                 min_rsp = smartBroadCast.min();
                 isSmartBroadcast = true;
+                appId = smartBroadCast.appId();
             } else if (annotation instanceof SmartAppender) {
                 SmartAppender appender = (SmartAppender) annotation;
                 includePf = appender.includePf();
@@ -117,6 +122,7 @@ public class WrapperMethod {
     @Override
     public String toString() {
         return "WrapperMethod{" +
+                "appId=" + appId +
                 "max=" + max +
                 ", min_req=" + min_req +
                 ", min_rsp=" + min_rsp +

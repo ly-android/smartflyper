@@ -19,4 +19,10 @@ public @interface SmartUri {
     int req();
 
     int rsp();
+
+    /**
+     * svc通道appId
+     * @return
+     */
+    int appId() default 0;
 }

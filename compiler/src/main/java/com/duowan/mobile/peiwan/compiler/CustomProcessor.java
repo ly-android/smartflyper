@@ -369,6 +369,7 @@ public class CustomProcessor extends AbstractProcessor {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
                 .addStatement("wrapperMethod.max=$L", smartBroadCast.max())
                 .addStatement("wrapperMethod.min_rsp=$L", smartBroadCast.min())
+                .addStatement("wrapperMethod.appId=$L", smartBroadCast.appId())
                 .addStatement("wrapperMethod.isSmartBroadcast=true");
         //获取广播中SmartObserverResult的参数类型
         if (methodParameters.size() != 1) {
@@ -399,6 +400,7 @@ public class CustomProcessor extends AbstractProcessor {
 
     private void generateSmartUriCode(SmartUri smartUri, MethodSpec.Builder methdSpecBuilder) {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
+                .addStatement("wrapperMethod.appId=$L", smartUri.appId())
                 .addStatement("wrapperMethod.max=$L", smartUri.max())
                 .addStatement("wrapperMethod.min_req=$L", smartUri.req())
                 .addStatement("wrapperMethod.min_rsp=$L", smartUri.rsp());
