@@ -13,7 +13,6 @@ import com.squareup.javapoet.TypeSpec;
 import com.yy.core.yyp.smart.ISmartFlyperFactory;
 import com.yy.core.yyp.smart.ParamEntity;
 import com.yy.core.yyp.smart.SmartFlyperDelegate;
-import com.yy.core.yyp.smart.SvcApp;
 import com.yy.core.yyp.smart.WrapperMethod;
 import com.yy.core.yyp.smart.anotation.LazyInit;
 import com.yy.core.yyp.smart.anotation.SmartAppender;
@@ -370,7 +369,7 @@ public class CustomProcessor extends AbstractProcessor {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
                 .addStatement("wrapperMethod.max=$L", smartBroadCast.max())
                 .addStatement("wrapperMethod.min_rsp=$L", smartBroadCast.min())
-                .addStatement("wrapperMethod.appId=$T.$L", SvcApp.class, smartBroadCast.appId())
+                .addStatement("wrapperMethod.appId=$L", smartBroadCast.appId())
                 .addStatement("wrapperMethod.isSmartBroadcast=true");
         //获取广播中SmartObserverResult的参数类型
         if (methodParameters.size() != 1) {
@@ -401,7 +400,7 @@ public class CustomProcessor extends AbstractProcessor {
 
     private void generateSmartUriCode(SmartUri smartUri, MethodSpec.Builder methdSpecBuilder) {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
-                .addStatement("wrapperMethod.appId=$T.$L", SvcApp.class, smartUri.appId())
+                .addStatement("wrapperMethod.appId=$L", smartUri.appId())
                 .addStatement("wrapperMethod.max=$L", smartUri.max())
                 .addStatement("wrapperMethod.min_req=$L", smartUri.req())
                 .addStatement("wrapperMethod.min_rsp=$L", smartUri.rsp());

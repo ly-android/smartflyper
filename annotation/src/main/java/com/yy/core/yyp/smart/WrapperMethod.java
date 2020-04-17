@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 public class WrapperMethod {
 
-    public SvcApp appId = SvcApp.peiwan; //svc appId
+    public int appId = 0; //svc appId
     public int max = 0;//大类
     public int min_req = 0;//req小类
     public int min_rsp = 0;//rsp小类
@@ -52,7 +52,7 @@ public class WrapperMethod {
 
     static final class Builder {
         Method method;
-        SvcApp appId;
+        int appId;
         int max;
         int min_req;
         int min_rsp;

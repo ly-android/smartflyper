@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import com.yy.core.yyp.smart.SmartFlyperFactory$$app;
-import com.yy.core.yyp.smart.SvcApp;
 import com.yy.core.yyp.smart.anotation.SmartAppender;
 import com.yy.core.yyp.smart.anotation.SmartUri;
 
@@ -21,7 +20,7 @@ public class MainActivity extends Activity {
 
     public interface InnerService {
         @SmartAppender
-        @SmartUri(max = 101, req = 312, rsp = 313, appId = SvcApp.mobile)
+        @SmartUri(max = 101, req = 312, rsp = 313, appId = 60015)
         Observable<String> getRoomInfo();
     }
 }
