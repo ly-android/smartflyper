@@ -21,6 +21,7 @@ import com.yy.core.yyp.smart.anotation.SmartJson;
 import com.yy.core.yyp.smart.anotation.SmartMap;
 import com.yy.core.yyp.smart.anotation.SmartParam;
 import com.yy.core.yyp.smart.anotation.SmartUri;
+import com.yy.core.yyp.smart.anotation.SmartUri2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 import static javax.lang.model.element.ElementKind.INTERFACE;
@@ -56,6 +58,7 @@ import static javax.lang.model.element.ElementKind.INTERFACE;
 @AutoService(Processor.class)
 public class CustomProcessor extends AbstractProcessor {
 
+    private Types mTypesUtil;
     private Filer mFiler; //文件相关的辅助类
     private Elements mElementUtils; //元素相关的辅助类
     private Messager mMessager; //日志相关的辅助类
@@ -64,11 +67,13 @@ public class CustomProcessor extends AbstractProcessor {
     private static final String OBSERVABLE_TYPE = "io.reactivex.Observable";
     private static final String BASEENTITY_TYPE = "com.yy.core.room.protocol.BaseEntity";
     private static final String SMARTOBSERVERRESULT_TYPE = "com.yy.core.yyp.smart.SmartObserverResult";
+    private static final String CONTINUATION_TYPE = "kotlin.coroutines.Continuation";
     private String moduleName = "App";
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
+        mTypesUtil = processingEnv.getTypeUtils();
         mFiler = processingEnv.getFiler();
         mElementUtils = processingEnv.getElementUtils();
         mMessager = processingEnv.getMessager();
@@ -84,6 +89,7 @@ public class CustomProcessor extends AbstractProcessor {
         Set<String> types = new LinkedHashSet<>();
         types.add(SmartBroadCast.class.getCanonicalName());
         types.add(SmartUri.class.getCanonicalName());
+        types.add(SmartUri2.class.getCanonicalName());
         return types;
     }
 
@@ -109,10 +115,15 @@ public class CustomProcessor extends AbstractProcessor {
     }
 
     private void parseAnonation(RoundEnvironment roundEnvironment) {
-        Set<ExecutableElement> executableElements = ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(SmartUri.class));
-        Set<ExecutableElement> executableElements2 = ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(SmartBroadCast.class));
+        Set<ExecutableElement> executableElements =
+            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(SmartUri.class));
+        Set<ExecutableElement> executableElements2 =
+            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(SmartBroadCast.class));
+        Set<ExecutableElement> executableElements3 =
+            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(SmartUri2.class));
+        executableElements.addAll(executableElements2);
+        executableElements.addAll(executableElements3);
         parse(executableElements);
-        parse(executableElements2);
         generateDelegate();
     }
 
@@ -146,24 +157,28 @@ public class CustomProcessor extends AbstractProcessor {
                     List<ExecutableElement> executableElements = typeElementListMap.get(typeElement);
                     for (ExecutableElement executableElement : executableElements) {
                         SmartUri smartUri = executableElement.getAnnotation(SmartUri.class);
+                        SmartUri2 smartUri2 = executableElement.getAnnotation(SmartUri2.class);
                         SmartBroadCast smartBroadCast = executableElement.getAnnotation(SmartBroadCast.class);
                         SmartAppender smartAppender = executableElement.getAnnotation(SmartAppender.class);
-                        if (smartUri != null || smartBroadCast != null) {
+                        if (smartUri != null || smartUri2 != null || smartBroadCast != null) {
                             List<ParameterSpec> parameterSpecs = new ArrayList<>();
                             for (VariableElement variableElement : executableElement.getParameters()) {
                                 parameterSpecs.add(ParameterSpec.get(variableElement));
                             }
                             TypeMirror typeMirror = executableElement.getReturnType();
-
                             //取得方法参数列表
                             List<? extends VariableElement> methodParameters = executableElement.getParameters();
-                            MethodSpec.Builder methdSpecBuilder = MethodSpec.methodBuilder(executableElement.getSimpleName().toString())
+                            MethodSpec.Builder methdSpecBuilder =
+                                MethodSpec.methodBuilder(executableElement.getSimpleName().toString())
                                     .addModifiers(Modifier.PUBLIC)
                                     .returns(TypeName.get(typeMirror))
                                     .addJavadoc("apt自动生成的实现方法")
                                     .addParameters(parameterSpecs);
                             if (smartUri != null) {
                                 generateSmartUriCode(smartUri, methdSpecBuilder);
+                            }
+                            if (smartUri2 != null) {
+                                generateSmartUri2Code(smartUri2, methdSpecBuilder);
                             }
                             if (smartBroadCast != null) {
                                 generateSmartBroadcastCode(smartBroadCast, methodParameters, methdSpecBuilder);
@@ -173,25 +188,33 @@ public class CustomProcessor extends AbstractProcessor {
                             //校验和生成方法形式参数类型
                             generateParamsCode(methodParameters, methdSpecBuilder);
                             if (smartAppender != null) {
-                                methdSpecBuilder.addStatement("wrapperMethod.includeVersion=$L", smartAppender.includeVersion());
-                                methdSpecBuilder.addStatement("wrapperMethod.includeUid=$L", smartAppender.includeUid());
+                                methdSpecBuilder
+                                    .addStatement("wrapperMethod.includeVersion=$L", smartAppender.includeVersion());
+                                methdSpecBuilder
+                                    .addStatement("wrapperMethod.includeUid=$L", smartAppender.includeUid());
                                 methdSpecBuilder.addStatement("wrapperMethod.includePf=$L", smartAppender.includePf());
                             }
                             //生成返回值
-                            methdSpecBuilder.addStatement("return $T.send(wrapperMethod)", SmartFlyperDelegate.class);
+                            if (smartUri != null || smartBroadCast != null) {
+                                methdSpecBuilder
+                                    .addStatement("return $T.send(wrapperMethod)", SmartFlyperDelegate.class);
+                            } else if (smartUri2 != null) {
+                                methdSpecBuilder
+                                    .addStatement("return $T.sendCoroutines(wrapperMethod)", SmartFlyperDelegate.class);
+                            }
                             methodSpecList.add(methdSpecBuilder.build());
                         }
                     }
 
                     String pkg = mElementUtils.getPackageOf(typeElement).getQualifiedName().toString();
                     TypeSpec proxyClass = TypeSpec.classBuilder(typeElement.getSimpleName() + SUFFIX_CLASSNAME)
-                            .addModifiers(Modifier.PUBLIC)
-                            .addSuperinterface(ClassName.get(typeElement))
-                            .addMethods(methodSpecList)
-                            .build();
+                        .addModifiers(Modifier.PUBLIC)
+                        .addSuperinterface(ClassName.get(typeElement))
+                        .addMethods(methodSpecList)
+                        .build();
 
                     JavaFile javaFile = JavaFile.builder(pkg, proxyClass)
-                            .build();
+                        .build();
 
                     javaFile.writeTo(mFiler);
                 }
@@ -208,7 +231,8 @@ public class CustomProcessor extends AbstractProcessor {
             return;
         }
         try {
-            FieldSpec.Builder fieldBuild = FieldSpec.builder(ParameterizedTypeName.get(LinkedHashMap.class, String.class, Object.class),
+            FieldSpec.Builder fieldBuild =
+                FieldSpec.builder(ParameterizedTypeName.get(LinkedHashMap.class, String.class, Object.class),
                     "apiMap", Modifier.PRIVATE);
             fieldBuild.initializer("new LinkedHashMap<>()");
 
@@ -224,89 +248,91 @@ public class CustomProcessor extends AbstractProcessor {
                 if (lazyInit != null) {
                     if (!lazyInit.value()) {
                         builder.addStatement("apiMap.put($S,new $L())", key.getQualifiedName().toString(),
-                                cls);
+                            cls);
                     }
                 } else {
                     builder.addStatement("apiMap.put($S,new $L())", key.getQualifiedName().toString(),
-                            cls);
+                        cls);
                 }
             }
 
 
             MethodSpec initApi = MethodSpec.methodBuilder("initApi")
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(TypeName.VOID)
-                    .addAnnotation(Override.class)
-                    .addJavadoc("必须要初始化,保证api不为空")
-                    .addCode(builder.build())
-                    .build();
+                .addModifiers(Modifier.PUBLIC)
+                .returns(TypeName.VOID)
+                .addAnnotation(Override.class)
+                .addJavadoc("必须要初始化,保证api不为空")
+                .addCode(builder.build())
+                .build();
 
             MethodSpec init = MethodSpec.constructorBuilder()
-                    .addModifiers(Modifier.PUBLIC)
-                    .addStatement("$N()", initApi)
-                    .build();
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("$N()", initApi)
+                .build();
 
             MethodSpec getApi = MethodSpec.methodBuilder("getApi")
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(Object.class)
-                    .addAnnotation(Override.class)
-                    .addJavadoc("获取api,保证不会为空")
-                    .addParameter(Class.class, "cls")
-                    .addStatement("String clsName = cls.getCanonicalName();\n" +
-                            "        Object api = apiMap.get(clsName);\n" +
-                            "        if (api == null) {\n" +
-                            "            try {\n" +
-                            "                api = Class.forName(clsName + $S).newInstance();\n" +
-                            "            }catch (java.lang.ClassNotFoundException ex) {\n" +
-                            "                android.util.Log.e(\"SmartFlyperFactory\", \"start get inner class Delegate\");\n" +
-                            "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
-                            "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
-                            "                try {\n" +
-                            "                    api = Class.forName(clsName +\".\"+cls.getSimpleName()+ $S).newInstance();\n" +
-                            "                } catch (Exception e1) {\n" +
-                            "                    $L.e(\"SmartFlyperFactory\", \"getApi inner class error \", e1);\n" +
-                            "                }                                       \n" +
-                            "            } catch (Exception e) {\n" +
-                            "                $L.e(\"SmartFlyperFactory\", \"getApi error \", e);\n" +
-                            "            }\n" +
-                            "            apiMap.put(clsName, api);\n" +
-                            "        }\n" +
-                            "        return api", SUFFIX_CLASSNAME, SUFFIX_CLASSNAME, "android.util.Log", "android.util.Log")
-                    .build();
+                .addModifiers(Modifier.PUBLIC)
+                .returns(Object.class)
+                .addAnnotation(Override.class)
+                .addJavadoc("获取api,保证不会为空")
+                .addParameter(Class.class, "cls")
+                .addStatement("String clsName = cls.getCanonicalName();\n" +
+                    "        Object api = apiMap.get(clsName);\n" +
+                    "        if (api == null) {\n" +
+                    "            try {\n" +
+                    "                api = Class.forName(clsName + $S).newInstance();\n" +
+                    "            }catch (java.lang.ClassNotFoundException ex) {\n" +
+                    "                android.util.Log.e(\"SmartFlyperFactory\", \"start get inner class Delegate\");\n" +
+                    "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
+                    "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"));\n" +
+                    "                try {\n" +
+                    "                    api = Class.forName(clsName +\".\"+cls.getSimpleName()+ $S).newInstance();\n" +
+                    "                } catch (Exception e1) {\n" +
+                    "                    $L.e(\"SmartFlyperFactory\", \"getApi inner class error \", e1);\n" +
+                    "                }                                       \n" +
+                    "            } catch (Exception e) {\n" +
+                    "                $L.e(\"SmartFlyperFactory\", \"getApi error \", e);\n" +
+                    "            }\n" +
+                    "            apiMap.put(clsName, api);\n" +
+                    "        }\n" +
+                    "        return api", SUFFIX_CLASSNAME, SUFFIX_CLASSNAME, "android.util.Log", "android.util.Log")
+                .build();
 
             MethodSpec removeApi = MethodSpec.methodBuilder("removeApi")
-                    .addModifiers(Modifier.PUBLIC)
-                    .addAnnotation(Override.class)
-                    .addParameter(Class.class, "cls")
-                    .addJavadoc("移除api接口")
-                    .returns(TypeName.BOOLEAN)
-                    .addStatement("String clsName=cls.getCanonicalName();\n" +
-                            "      if(apiMap.containsKey(clsName)){\n" +
-                            "            apiMap.remove(clsName);\n" +
-                            "            return true;\n" +
-                            "        }\n" +
-                            "        return false")
-                    .build();
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(Class.class, "cls")
+                .addJavadoc("移除api接口")
+                .returns(TypeName.BOOLEAN)
+                .addStatement("String clsName=cls.getCanonicalName();\n" +
+                    "      if(apiMap.containsKey(clsName)){\n" +
+                    "            apiMap.remove(clsName);\n" +
+                    "            return true;\n" +
+                    "        }\n" +
+                    "        return false")
+                .build();
 
             TypeSpec factory = TypeSpec.classBuilder("SmartFlyperFactory$$" + moduleName)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addSuperinterface(TypeName.get(ISmartFlyperFactory.class))
-                    .addJavadoc("apt自动生成,不需要修改")
-                    .addField(fieldBuild.build())
-                    .addMethod(init)
-                    .addMethod(initApi)
-                    .addMethod(getApi)
-                    .addMethod(removeApi)
-                    .build();
+                .addModifiers(Modifier.PUBLIC)
+                .addSuperinterface(TypeName.get(ISmartFlyperFactory.class))
+                .addJavadoc("apt自动生成,不需要修改")
+                .addField(fieldBuild.build())
+                .addMethod(init)
+                .addMethod(initApi)
+                .addMethod(getApi)
+                .addMethod(removeApi)
+                .build();
 
             JavaFile javaFile = JavaFile.builder("com.yy.core.yyp.smart", factory)
-                    .build();
+                .build();
 
             javaFile.writeTo(mFiler);
         } catch (Exception ex) {
             warn("printing ,generateFactory error " + ex.getMessage());
         }
     }
+
+    private static final String errorReturnInfo = "方法返回类型必须是String,BaseEntity,Observable<T>,T is String or BaseEntity";
 
     private void checkAndGenerateCode(TypeMirror typeMirror, MethodSpec.Builder methdSpecBuilder) {
         if (typeMirror.getKind() == TypeKind.DECLARED) {
@@ -316,33 +342,40 @@ public class CustomProcessor extends AbstractProcessor {
             //string,observale类型才合理
             if (TypeName.get(typeMirror).equals(TypeName.get(String.class))) {
                 methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=$L.class",
-                        TypeName.get(typeMirror));
+                    TypeName.get(typeMirror));
+            } else if (TypeName.get(typeMirror).equals(TypeName.get(Object.class))) {
+                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=$L.class",
+                    TypeName.get(typeMirror));
             } else if (typeArguments.size() == 1) {
                 if (erasureType.equals(OBSERVABLE_TYPE)) {
                     //判断参数是否为string或者BaseEntity或子类行
                     TypeMirror returnParameterType = typeArguments.get(0);
                     String erasureParamers = erasureType(returnParameterType);
 
-                    if (erasureParamers.equals(String.class.getCanonicalName()) || erasureParamers.equals(BASEENTITY_TYPE) || isSubtypeOfType(returnParameterType, BASEENTITY_TYPE)) {
+                    if (erasureParamers.equals(String.class.getCanonicalName()) ||
+                        erasureParamers.equals(BASEENTITY_TYPE) ||
+                        isSubtypeOfType(returnParameterType, BASEENTITY_TYPE)) {
                         methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=$T.class",
-                                TypeName.get(returnParameterType));
+                            TypeName.get(returnParameterType));
                     } else {
-                        error("方法返回类型必须是Observable<T>,T is String or BaseEntity");
+                        error(errorReturnInfo + ">>>>1");
                     }
                 } else {
-                    error("方法返回类型必须是Observable<T>,T is String or BaseEntity");
+                    error(errorReturnInfo + ">>>>2");
                 }
             } else {
-                error("方法返回类型必须是Observable<T>,T is String or BaseEntity");
+                error(errorReturnInfo + ">>>>3");
             }
         } else {
-            error("方法返回类型必须是Observable<T>,T is String or BaseEntity");
+            error(errorReturnInfo + ">>>>4");
         }
     }
 
-    private void generateParamsCode(List<? extends VariableElement> methodParameters, MethodSpec.Builder methdSpecBuilder) {
+    private void generateParamsCode(List<? extends VariableElement> methodParameters,
+                                    MethodSpec.Builder methdSpecBuilder) {
         int size = methodParameters.size();
-        methdSpecBuilder.addStatement("com.yy.core.yyp.smart.ParamEntity[] paramEntities = new com.yy.core.yyp.smart.ParamEntity[$L]", size);
+        methdSpecBuilder.addStatement(
+            "com.yy.core.yyp.smart.ParamEntity[] paramEntities = new com.yy.core.yyp.smart.ParamEntity[$L]", size);
         methdSpecBuilder.addStatement("Object[] args = new Object[$L]", size);
 
         for (int i = 0; i < size; i++) {
@@ -351,26 +384,48 @@ public class CustomProcessor extends AbstractProcessor {
             SmartMap smartMap = parameter.getAnnotation(SmartMap.class);
             SmartJson smartJson = parameter.getAnnotation(SmartJson.class);
             if (smartParam != null) {
-                methdSpecBuilder.addStatement("paramEntities[$L]=new $T($L, $S)", i, ParamEntity.class, ParamEntity.SMARTPARAM, smartParam.value());
+                methdSpecBuilder
+                    .addStatement("paramEntities[$L]=new $T($L, $S)", i, ParamEntity.class, ParamEntity.SMARTPARAM,
+                        smartParam.value());
             }
             if (smartMap != null) {
-                methdSpecBuilder.addStatement("paramEntities[$L]=new $T($L, \"\")", i, ParamEntity.class, ParamEntity.SMARTMAP);
+                methdSpecBuilder
+                    .addStatement("paramEntities[$L]=new $T($L, \"\")", i, ParamEntity.class, ParamEntity.SMARTMAP);
             }
             if (smartJson != null) {
-                methdSpecBuilder.addStatement("paramEntities[$L]=new $T($L, \"\")", i, ParamEntity.class, ParamEntity.SMARTJSON);
+                methdSpecBuilder
+                    .addStatement("paramEntities[$L]=new $T($L, \"\")", i, ParamEntity.class, ParamEntity.SMARTJSON);
             }
-            methdSpecBuilder.addStatement("args[$L]=$L", i, parameter.getSimpleName().toString());
+
+            TypeMirror varType = parameter.asType();
+            if (varType instanceof TypeVariable) {
+                note("smartflyper-apt is TypeVariable");
+                TypeVariable typeVariable = (TypeVariable) varType;
+                varType = typeVariable.getUpperBound();
+            }
+            //参数类型
+            String methodParamErasure = erasureType(varType);
+            if (methodParamErasure.equals(CONTINUATION_TYPE)) { //是kotlin suspends函数
+                TypeMirror methodParamType = ((DeclaredType) varType).getTypeArguments().get(0);
+                String methodParamTypeErasure = erasureType2(methodParamType);
+                // warn("methodParamTypeErasure " + methodParamType);
+                methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure));
+            } else {
+                methdSpecBuilder.addStatement("args[$L]=$L", i, parameter.getSimpleName().toString());
+            }
         }
         methdSpecBuilder.addStatement("wrapperMethod.args=args");
         methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities");
     }
 
-    private void generateSmartBroadcastCode(SmartBroadCast smartBroadCast, List<? extends VariableElement> methodParameters, MethodSpec.Builder methdSpecBuilder) {
+    private void generateSmartBroadcastCode(SmartBroadCast smartBroadCast,
+                                            List<? extends VariableElement> methodParameters,
+                                            MethodSpec.Builder methdSpecBuilder) {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
-                .addStatement("wrapperMethod.max=$L", smartBroadCast.max())
-                .addStatement("wrapperMethod.min_rsp=$L", smartBroadCast.min())
-                .addStatement("wrapperMethod.appId=$L", smartBroadCast.appId())
-                .addStatement("wrapperMethod.isSmartBroadcast=true");
+            .addStatement("wrapperMethod.max=$L", smartBroadCast.max())
+            .addStatement("wrapperMethod.min_rsp=$L", smartBroadCast.min())
+            .addStatement("wrapperMethod.appId=$L", smartBroadCast.appId())
+            .addStatement("wrapperMethod.isSmartBroadcast=true");
         //获取广播中SmartObserverResult的参数类型
         if (methodParameters.size() != 1) {
             error("广播的参数必须只有一个");
@@ -386,9 +441,11 @@ public class CustomProcessor extends AbstractProcessor {
             if (methodParamErasure.equals(SMARTOBSERVERRESULT_TYPE)) {
                 TypeMirror methodParamType = ((DeclaredType) varType).getTypeArguments().get(0);
                 String methodParamTypeErasure = erasureType(methodParamType);
-                if (methodParamTypeErasure.equals(String.class.getCanonicalName()) || methodParamTypeErasure.equals(BASEENTITY_TYPE) || isSubtypeOfType(methodParamType, BASEENTITY_TYPE)) {
+                if (methodParamTypeErasure.equals(String.class.getCanonicalName()) ||
+                    methodParamTypeErasure.equals(BASEENTITY_TYPE) ||
+                    isSubtypeOfType(methodParamType, BASEENTITY_TYPE)) {
                     methdSpecBuilder.addStatement("wrapperMethod.paramsTypes=$T.class",
-                            TypeName.get(methodParamType));
+                        TypeName.get(methodParamType));
                 } else {
                     error("参数必须是SmartObservelResult<T>,T is String or BaseEntity类型");
                 }
@@ -400,15 +457,23 @@ public class CustomProcessor extends AbstractProcessor {
 
     private void generateSmartUriCode(SmartUri smartUri, MethodSpec.Builder methdSpecBuilder) {
         methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
-                .addStatement("wrapperMethod.appId=$L", smartUri.appId())
-                .addStatement("wrapperMethod.max=$L", smartUri.max())
-                .addStatement("wrapperMethod.min_req=$L", smartUri.req())
-                .addStatement("wrapperMethod.min_rsp=$L", smartUri.rsp());
+            .addStatement("wrapperMethod.appId=$L", smartUri.appId())
+            .addStatement("wrapperMethod.max=$L", smartUri.max())
+            .addStatement("wrapperMethod.min_req=$L", smartUri.req())
+            .addStatement("wrapperMethod.min_rsp=$L", smartUri.rsp());
+    }
+
+    private void generateSmartUri2Code(SmartUri2 smartUri, MethodSpec.Builder methdSpecBuilder) {
+        methdSpecBuilder.addStatement("$T wrapperMethod=new $T()", WrapperMethod.class, WrapperMethod.class)
+            .addStatement("wrapperMethod.appId=$L", smartUri.appId())
+            .addStatement("wrapperMethod.max=$L", smartUri.max())
+            .addStatement("wrapperMethod.min_req=$L", smartUri.req())
+            .addStatement("wrapperMethod.min_rsp=$L", smartUri.rsp());
     }
 
     private boolean isInterface(TypeMirror typeMirror) {
         return typeMirror instanceof DeclaredType
-                && ((DeclaredType) typeMirror).asElement().getKind() == INTERFACE;
+            && ((DeclaredType) typeMirror).asElement().getKind() == INTERFACE;
     }
 
     private String erasureType(TypeMirror elementType) {
@@ -417,6 +482,13 @@ public class CustomProcessor extends AbstractProcessor {
         if (typeParamStart != -1) {
             name = name.substring(0, typeParamStart);
         }
+        return name;
+    }
+
+    //泛型类型例如 ? super com.yy.core.room.protocol.BaseEntity
+    private String erasureType2(TypeMirror elementType) {
+        String name = elementType.toString();
+        name = name.replace("? super ", "");
         return name;
     }
 
@@ -463,7 +535,6 @@ public class CustomProcessor extends AbstractProcessor {
     private static boolean isTypeEqual(TypeMirror typeMirror, String otherType) {
         return otherType.equals(typeMirror.toString());
     }
-
 
     private void note(String msg) {
         mMessager.printMessage(Diagnostic.Kind.NOTE, msg);

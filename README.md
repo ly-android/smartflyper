@@ -102,5 +102,5 @@ public interface IRoomInfo{
 - 在接口中不能有其他非注解形式的抽象方法，否则编译不过
 - LazyInit注解默认是false，表示是否需要延迟创建api实现类;如果true,在使用SmartFlyper.getInstance().Create()的时候才会实例化。
 
-
+[kotlinpoet参考demo](https://blog.csdn.net/qq_22090073/article/details/110622704)
 
