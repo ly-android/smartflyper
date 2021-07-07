@@ -4,8 +4,8 @@ import android.app.Activity
 import android.os.Bundle
 import com.yy.core.yyp.smart.ISmartFlyper2
 import com.yy.core.yyp.smart.SmartFlyperDelegate
+import com.yy.core.yyp.smart.SmartFlyperFactory__app
 import com.yy.core.yyp.smart.WrapperMethod
-import com.yy.core.yyp.smart.`SmartFlyperFactory__app`
 import com.yy.core.yyp.smart.anotation.SmartAppender
 import com.yy.core.yyp.smart.anotation.SmartUri
 import io.reactivex.Observable
@@ -18,7 +18,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        `SmartFlyperFactory__app`().getApi(InnerService::class.java)
+        SmartFlyperFactory__app().getApi(InnerService::class.java)
         SmartFlyperDelegate.setSmartFlyper2(object : ISmartFlyper2 {
             override suspend fun <T : Any?> sendCoroutines(method: WrapperMethod?): T? {
                 return getUser2() as? T

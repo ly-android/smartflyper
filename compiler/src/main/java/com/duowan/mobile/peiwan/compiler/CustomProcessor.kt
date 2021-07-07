@@ -185,7 +185,7 @@ class CustomProcessor : AbstractProcessor() {
                             val methodParameters: List<VariableElement> = executableElement.parameters
                             val methodSpecBuilder: FunSpec.Builder =
                                 FunSpec.builder(executableElement.simpleName.toString())
-                                    .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                                    .addModifiers(KModifier.OVERRIDE)
                                     .returns(typeName)
                                     .addKdoc("apt自动生成的实现方法")
                                     .addParameters(parameterSpecs)
