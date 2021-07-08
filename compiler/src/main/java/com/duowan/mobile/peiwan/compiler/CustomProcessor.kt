@@ -26,6 +26,7 @@ import com.yy.core.yyp.smart.anotation.SmartJson
 import com.yy.core.yyp.smart.anotation.SmartMap
 import com.yy.core.yyp.smart.anotation.SmartParam
 import com.yy.core.yyp.smart.anotation.SmartUri
+import com.yy.core.yyp.smart.anotation.SmartUri2
 import org.jetbrains.annotations.Nullable
 import java.util.ArrayList
 import java.util.HashMap
@@ -51,6 +52,7 @@ import javax.lang.model.type.TypeVariable
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
 import javax.tools.Diagnostic
+import kotlin.coroutines.Continuation
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
 
@@ -82,6 +84,7 @@ class CustomProcessor : AbstractProcessor() {
         val types: MutableSet<String> = LinkedHashSet()
         types.add(SmartBroadCast::class.java.canonicalName)
         types.add(SmartUri::class.java.canonicalName)
+        types.add(SmartUri2::class.java.canonicalName)
         return types
     }
 
@@ -104,14 +107,18 @@ class CustomProcessor : AbstractProcessor() {
     }
 
     private fun parseAnonation(roundEnvironment: RoundEnvironment) {
-        val executableElements: Set<ExecutableElement> =
+        val executableElements: MutableSet<ExecutableElement> =
             ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
                 SmartUri::class.java))
-        val executableElements2: Set<ExecutableElement> =
+        val executableElements2: MutableSet<ExecutableElement> =
             ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
                 SmartBroadCast::class.java))
-        parse(executableElements)
-        parse(executableElements2)
+        val executableElements3: MutableSet<ExecutableElement> =
+            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
+                SmartUri2::class.java))
+        executableElements3.addAll(executableElements)
+        executableElements3.addAll(executableElements2)
+        parse(executableElements3)
         generateDelegate()
     }
 
@@ -144,20 +151,29 @@ class CustomProcessor : AbstractProcessor() {
                     val executableElements: List<ExecutableElement>? = typeElementListMap!![typeElement]
                     for (executableElement in executableElements!!) {
                         val smartUri: SmartUri? = executableElement.getAnnotation(SmartUri::class.java)
+                        val smartUri2: SmartUri2? = executableElement.getAnnotation(SmartUri2::class.java)
                         val smartBroadCast: SmartBroadCast? = executableElement.getAnnotation(SmartBroadCast::class
                             .java)
                         val smartAppender: SmartAppender? = executableElement.getAnnotation(SmartAppender::class.java)
-                        if (smartUri != null || smartBroadCast != null) {
+                        if (smartUri != null || smartBroadCast != null || smartUri2 != null) {
+
                             val parameterSpecs: MutableList<ParameterSpec> = ArrayList()
                             //处理参数
                             for (variableElement in executableElement.parameters) {
+                                //过滤suspend函数的参数
+                                if (variableElement.asType().asTypeName() is ParameterizedTypeName) {
+                                    var rawType =
+                                        (variableElement.asType().asTypeName() as ParameterizedTypeName).rawType
+                                    if (rawType == Continuation::class.asClassName()) {
+                                        continue
+                                    }
+                                }
                                 //追加注解
 //                                val annotationMirrors = variableElement.annotationMirrors.filter {
 //                                    it.annotationType.toString() == SmartParam::class.qualifiedName
 //                                        || it.annotationType.toString() == SmartJson::class.qualifiedName
 //                                        || it.annotationType.toString() == SmartMap::class.qualifiedName
 //                                }
-//                                warn("variableElement=${annotationMirrors}")
                                 var nullable = variableElement.getAnnotation(Nullable::class.java)
 //                                warn("variableElement=$nullable\n")
                                 var parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
@@ -174,9 +190,10 @@ class CustomProcessor : AbstractProcessor() {
 //                                }
                                 parameterSpecs.add(parameterSpecBuilder.build())
                             }
+
                             val typeMirror: TypeMirror = executableElement.returnType
                             val isNullable = executableElement.getAnnotation(Nullable::class.java)
-//                            warn("variableElement=$isNullable\n")
+
                             val typeName =
                                 if (isNullable == null) typeMirror.asTypeName().javaToKotlinType()
                                 else typeMirror.asTypeName().javaToKotlinType().copy(nullable = true)
@@ -192,13 +209,16 @@ class CustomProcessor : AbstractProcessor() {
                             if (smartUri != null) {
                                 generateSmartUriCode(smartUri, methodSpecBuilder)
                             }
+                            if (smartUri2 != null) {
+                                generateSmartUri2Code(smartUri2, methodSpecBuilder)
+                            }
                             if (smartBroadCast != null) {
                                 generateSmartBroadcastCode(smartBroadCast, methodParameters, methodSpecBuilder)
                             }
                             //如果是类或接口类型,检验返回类型的正确性
                             checkAndGenerateCode(typeMirror, methodSpecBuilder)
                             //校验和生成方法形式参数类型
-                            generateParamsCode(methodParameters, methodSpecBuilder)
+                            generateParamsCode(methodParameters, isNullable, methodSpecBuilder)
                             if (smartAppender != null) {
                                 methodSpecBuilder.addStatement("wrapperMethod.includeVersion=%L",
                                     smartAppender.includeVersion)
@@ -207,8 +227,13 @@ class CustomProcessor : AbstractProcessor() {
                                 methodSpecBuilder.addStatement("wrapperMethod.includePf=%L", smartAppender.includePf)
                             }
                             //生成返回值
-                            methodSpecBuilder.addStatement("return %T.send(wrapperMethod)",
-                                SmartFlyperDelegate::class.java)
+                            if (smartUri != null || smartBroadCast != null) {
+                                methodSpecBuilder.addStatement("return %T.send(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java)
+                            } else if (smartUri2 != null) {
+                                methodSpecBuilder.addStatement("return %T.sendCoroutines(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java)
+                            }
                             methodSpecList.add(methodSpecBuilder.build())
                         }
                     }
@@ -340,6 +365,10 @@ class CustomProcessor : AbstractProcessor() {
             if (typeMirror.asTypeName() == String::class.java.asClassName()) {
                 methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java",
                     typeMirror.asTypeName())
+            } else if (typeMirror.asTypeName().javaToKotlinType() == Any::class.asClassName()) { //suspend函数
+                note("checkAndGenerateCode ${typeMirror.asTypeName()} is suspend function ")
+                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java",
+                    typeMirror.asTypeName())
             } else if (typeArguments.size == 1) {
                 if (erasureType == OBSERVABLE_TYPE) {
                     //判断参数是否为string或者BaseEntity或子类行
@@ -363,7 +392,11 @@ class CustomProcessor : AbstractProcessor() {
         }
     }
 
-    private fun generateParamsCode(methodParameters: List<VariableElement>, methdSpecBuilder: FunSpec.Builder) {
+    private fun generateParamsCode(
+        methodParameters: List<VariableElement>, nullable: Annotation?, methdSpecBuilder:
+        FunSpec
+        .Builder
+    ) {
         val size = methodParameters.size
         methdSpecBuilder.addStatement(
             "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
@@ -385,7 +418,24 @@ class CustomProcessor : AbstractProcessor() {
                 methdSpecBuilder.addStatement("paramEntities[%L]=%T(%L, \"\")", i, ParamEntity::class.java,
                     ParamEntity.SMARTJSON)
             }
-            methdSpecBuilder.addStatement("args[%L]=%L", i, parameter.simpleName.toString())
+            val varType = parameter.asType()
+
+            //参数类型
+            val methodParamErasure = erasureType(varType)
+            if (methodParamErasure == CONTINUATION_TYPE) { //是kotlin suspends函数
+                val methodParamType = (varType as DeclaredType).typeArguments[0]
+//                warn("methodParamTypeErasure $methodParamType")
+                val methodParamTypeErasure: String = erasureType2(methodParamType)
+                if (nullable != null) {
+                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure).copy(nullable = true))
+                } else {
+                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure))
+                }
+                methdSpecBuilder.modifiers.remove(KModifier.PUBLIC)
+                methdSpecBuilder.addModifiers(KModifier.SUSPEND)
+            } else {
+                methdSpecBuilder.addStatement("args[%L]=%L", i, parameter.simpleName.toString())
+            }
         }
         methdSpecBuilder.addStatement("wrapperMethod.args=args")
         methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities")
@@ -436,6 +486,14 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
     }
 
+    private fun generateSmartUri2Code(smartUri: SmartUri2, methedSpecBuilder: FunSpec.Builder) {
+        methedSpecBuilder.addStatement("var wrapperMethod=%T()", WrapperMethod::class)
+            .addStatement("wrapperMethod.appId=%L", smartUri.appId)
+            .addStatement("wrapperMethod.max=%L", smartUri.max)
+            .addStatement("wrapperMethod.min_req=%L", smartUri.req)
+            .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
+    }
+
     private fun isInterface(typeMirror: TypeMirror): Boolean {
         return (typeMirror is DeclaredType
             && typeMirror.asElement().kind == ElementKind.INTERFACE)
@@ -447,6 +505,13 @@ class CustomProcessor : AbstractProcessor() {
         if (typeParamStart != -1) {
             name = name.substring(0, typeParamStart)
         }
+        return name
+    }
+
+    //泛型类型例如 ? super com.yy.core.room.protocol.BaseEntity
+    private fun erasureType2(elementType: TypeMirror): String {
+        var name = elementType.toString()
+        name = name.replace("? super ", "")
         return name
     }
 
@@ -507,6 +572,7 @@ class CustomProcessor : AbstractProcessor() {
         private const val OBSERVABLE_TYPE = "io.reactivex.Observable"
         private const val BASEENTITY_TYPE = "com.yy.core.room.protocol.BaseEntity"
         private const val SMARTOBSERVERRESULT_TYPE = "com.yy.core.yyp.smart.SmartObserverResult"
+        private const val CONTINUATION_TYPE = "kotlin.coroutines.Continuation"
         private fun isTypeEqual(typeMirror: TypeMirror, otherType: String): Boolean {
             return otherType == typeMirror.toString()
         }
