@@ -371,7 +371,7 @@ class CustomProcessor : AbstractProcessor() {
             } else if (typeMirror.asTypeName().javaToKotlinType() == Any::class.asClassName()) { //suspend函数
                 note("checkAndGenerateCode ${typeMirror.asTypeName()} is suspend function ")
                 methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java", returnTypeName
-                    .toString().replace("?", ""))
+                    .toString().replace("?", "")) //删除可空类型的问号
             } else if (typeArguments.size == 1) {
                 if (erasureType == OBSERVABLE_TYPE) {
                     //判断参数是否为string或者BaseEntity或子类行

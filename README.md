@@ -103,4 +103,5 @@ public interface IRoomInfo{
 - LazyInit注解默认是false，表示是否需要延迟创建api实现类;如果true,在使用SmartFlyper.getInstance().Create()的时候才会实例化。
 
 [kotlinpoet参考demo](https://blog.csdn.net/qq_22090073/article/details/110622704)
+[kotlinpoet使用指南](https://enzowyf.github.io/kotlinpoet.html)
 
