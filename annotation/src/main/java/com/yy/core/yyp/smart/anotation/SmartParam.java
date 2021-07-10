@@ -15,4 +15,10 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Retention(CLASS)
 public @interface SmartParam {
     String value();//param name
+
+    boolean isMutableMap() default false;
+
+    boolean isMutableSet() default false;
+
+    boolean isMutableList() default false;
 }

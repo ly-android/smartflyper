@@ -13,14 +13,16 @@ import io.reactivex.Observable
 interface ITestService {
     @SmartUri(max = 101, req = 312, rsp = 313)
     fun getMyRoomInfo(
-        @SmartParam("uid") uid: Long,
-        @SmartParam("version") version: String?, @SmartParam("pf") pf: Int
+        @SmartParam("uid", isMutableList = true) uids: MutableList<Long>,
+        @SmartParam("version", isMutableMap = true) version: MutableMap<String, String>?,
+        @SmartParam("pf") pf: Map<String, String>
     ): Observable<String>?
 
     @SmartUri(max = 101, req = 308, rsp = 309)
     fun getRoomDetailInfo(
-        @SmartParam("channelId") channelId: Long, @SmartParam("uid") uid: Long,
-        @SmartParam("version") version: String
+        @SmartParam("channelId") channelIds: List<Long>,
+        @SmartParam("uid") uid: HashSet<Long>,
+        @SmartParam("version", isMutableSet = true) version: MutableSet<String>
     ): Observable<String>
 
     @SmartBroadCast(max = 101, min = 310)

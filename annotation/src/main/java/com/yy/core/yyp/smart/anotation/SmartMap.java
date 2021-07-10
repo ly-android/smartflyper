@@ -14,4 +14,5 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Target(PARAMETER)
 @Retention(CLASS)
 public @interface SmartMap {
+    boolean isMutableMap() default false;
 }

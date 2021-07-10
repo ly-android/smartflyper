@@ -6,6 +6,9 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.MUTABLE_LIST
+import com.squareup.kotlinpoet.MUTABLE_MAP
+import com.squareup.kotlinpoet.MUTABLE_SET
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -176,12 +179,22 @@ class CustomProcessor : AbstractProcessor() {
 //                                }
                                 var nullable = variableElement.getAnnotation(Nullable::class.java)
 //                                warn("variableElement=$nullable\n")
+                                //判断是否为mutable类型
+                                val smartParam: SmartParam? = variableElement.getAnnotation(SmartParam::class.java)
+                                val smartMap: SmartMap? = variableElement.getAnnotation(SmartMap::class.java)
+                                var paramTypeName = variableElement.asType().asTypeName()
+                                if (smartParam != null) {
+                                    paramTypeName = paramTypeName.asMutableTypeName(smartParam)
+                                }
+                                if (smartMap != null) {
+                                    paramTypeName = paramTypeName.asMutableTypeName2(smartMap)
+                                }
                                 var parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-                                    variableElement.asType().asTypeName().javaToKotlinType())
+                                    paramTypeName.javaToKotlinType())
                                     .jvmModifiers(variableElement.modifiers)
                                 if (nullable != null) {
                                     parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-                                        variableElement.asType().asTypeName().javaToKotlinType().copy(nullable = true))
+                                        paramTypeName.javaToKotlinType().copy(nullable = true))
                                         .jvmModifiers(variableElement.modifiers)
                                 }
 //                                if (annotationMirrors.isNotEmpty()) {
@@ -254,6 +267,105 @@ class CustomProcessor : AbstractProcessor() {
             //生成api接口工厂
             generateFactory()
         }
+    }
+
+    private fun TypeName.asMutableTypeName2(smartMap: SmartMap): TypeName {
+        if (smartMap.isMutableMap) {
+            return when (this) {
+                is ParameterizedTypeName -> {
+                    MUTABLE_MAP.parameterizedBy(
+                        *typeArguments.map {
+                            it.javaToKotlinType()
+                        }.toTypedArray()
+                    )
+                }
+                is WildcardTypeName -> {
+                    if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
+                    else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
+                }
+
+                else -> {
+                    val className =
+                        JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))?.asSingleFqName()
+                            ?.asString()
+                    if (className == null) this
+                    else ClassName.bestGuess(className)
+                }
+            }
+        }
+        return this
+    }
+
+    private fun TypeName.asMutableTypeName(smartParam: SmartParam): TypeName {
+        if (smartParam.isMutableMap) {
+            return when (this) {
+                is ParameterizedTypeName -> {
+                    MUTABLE_MAP.parameterizedBy(
+                        *typeArguments.map {
+                            it.javaToKotlinType()
+                        }.toTypedArray()
+                    )
+                }
+                is WildcardTypeName -> {
+                    if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
+                    else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
+                }
+
+                else -> {
+                    val className =
+                        JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))?.asSingleFqName()
+                            ?.asString()
+                    if (className == null) this
+                    else ClassName.bestGuess(className)
+                }
+
+            }
+        } else if (smartParam.isMutableList) {
+            return when (this) {
+                is ParameterizedTypeName -> {
+                    MUTABLE_LIST.parameterizedBy(
+                        *typeArguments.map {
+                            it.javaToKotlinType()
+                        }.toTypedArray()
+                    )
+                }
+                is WildcardTypeName -> {
+                    if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
+                    else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
+                }
+
+                else -> {
+                    val className =
+                        JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))?.asSingleFqName()
+                            ?.asString()
+                    if (className == null) this
+                    else ClassName.bestGuess(className)
+                }
+            }
+        } else if (smartParam.isMutableSet) {
+            return when (this) {
+                is ParameterizedTypeName -> {
+                    MUTABLE_SET.parameterizedBy(
+                        *typeArguments.map {
+                            it.javaToKotlinType()
+                        }.toTypedArray()
+                    )
+                }
+                is WildcardTypeName -> {
+                    if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
+                    else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
+                }
+
+                else -> {
+                    val className =
+                        JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))?.asSingleFqName()
+                            ?.asString()
+                    if (className == null) this
+                    else ClassName.bestGuess(className)
+                }
+            }
+        }
+        return this
     }
 
     private fun generateFactory() {

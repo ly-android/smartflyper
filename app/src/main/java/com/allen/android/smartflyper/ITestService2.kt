@@ -12,11 +12,11 @@ import com.yy.core.yyp.smart.anotation.SmartUri2
 interface ITestService2 {
 
     @SmartUri2(max = 101, req = 310, rsp = 311)
-    suspend fun getUserInfo(@SmartParam("uid") uid: Long): BaseEntity?
+    suspend fun getUserInfo(@SmartParam("uid") uid: List<Long>): BaseEntity?
 
 
     @SmartUri2(max = 101, req = 312, rsp = 313)
-    suspend fun getUserInfo2(@SmartParam("uid") uid: Long): UserEntity?
+    suspend fun getUserInfo2(@SmartParam("uid", isMutableList = true) uid: MutableList<Long>): UserEntity?
 
     @SmartUri2(max = 101, req = 312, rsp = 313)
     suspend fun getUserInfo3(@SmartParam("uid") uid: Long): String?
