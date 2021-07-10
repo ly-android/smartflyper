@@ -17,4 +17,7 @@ interface ITestService2 {
 
     @SmartUri2(max = 101, req = 312, rsp = 313)
     suspend fun getUserInfo2(@SmartParam("uid") uid: Long): UserEntity?
+
+    @SmartUri2(max = 101, req = 312, rsp = 313)
+    suspend fun getUserInfo3(@SmartParam("uid") uid: Long): String?
 }

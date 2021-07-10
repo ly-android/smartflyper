@@ -427,9 +427,10 @@ class CustomProcessor : AbstractProcessor() {
 //                warn("methodParamTypeErasure $methodParamType")
                 val methodParamTypeErasure: String = erasureType2(methodParamType)
                 if (nullable != null) {
-                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure).copy(nullable = true))
+                    methdSpecBuilder.returns(
+                        ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType().copy(nullable = true))
                 } else {
-                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure))
+                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType())
                 }
                 methdSpecBuilder.modifiers.remove(KModifier.PUBLIC)
                 methdSpecBuilder.addModifiers(KModifier.SUSPEND)
