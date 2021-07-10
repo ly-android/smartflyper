@@ -215,10 +215,10 @@ class CustomProcessor : AbstractProcessor() {
                             if (smartBroadCast != null) {
                                 generateSmartBroadcastCode(smartBroadCast, methodParameters, methodSpecBuilder)
                             }
-                            //如果是类或接口类型,检验返回类型的正确性
-                            checkAndGenerateCode(typeMirror, methodSpecBuilder)
                             //校验和生成方法形式参数类型
-                            generateParamsCode(methodParameters, isNullable, methodSpecBuilder)
+                            val returnTypeName = generateParamsCode(methodParameters, isNullable, methodSpecBuilder)
+                            //如果是类或接口类型,检验返回类型的正确性
+                            checkAndGenerateCode(typeMirror, returnTypeName, methodSpecBuilder)
                             if (smartAppender != null) {
                                 methodSpecBuilder.addStatement("wrapperMethod.includeVersion=%L",
                                     smartAppender.includeVersion)
@@ -356,7 +356,10 @@ class CustomProcessor : AbstractProcessor() {
 
     private val errorReturnInfo = "方法返回类型必须是String,BaseEntity,Observable<T>,T is String or BaseEntity"
 
-    private fun checkAndGenerateCode(typeMirror: TypeMirror, methdSpecBuilder: FunSpec.Builder) {
+    private fun checkAndGenerateCode(
+        typeMirror: TypeMirror, returnTypeName: TypeName?, methdSpecBuilder: FunSpec
+        .Builder
+    ) {
         if (typeMirror.getKind() == TypeKind.DECLARED) {
             val erasureType = erasureType(typeMirror) //获取返回的类型
             val declaredType: DeclaredType = typeMirror as DeclaredType
@@ -367,8 +370,8 @@ class CustomProcessor : AbstractProcessor() {
                     typeMirror.asTypeName())
             } else if (typeMirror.asTypeName().javaToKotlinType() == Any::class.asClassName()) { //suspend函数
                 note("checkAndGenerateCode ${typeMirror.asTypeName()} is suspend function ")
-                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java",
-                    typeMirror.asTypeName())
+                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java", returnTypeName
+                    .toString().replace("?", ""))
             } else if (typeArguments.size == 1) {
                 if (erasureType == OBSERVABLE_TYPE) {
                     //判断参数是否为string或者BaseEntity或子类行
@@ -396,7 +399,8 @@ class CustomProcessor : AbstractProcessor() {
         methodParameters: List<VariableElement>, nullable: Annotation?, methdSpecBuilder:
         FunSpec
         .Builder
-    ) {
+    ): TypeName? {
+        var returnTypeName: TypeName? = null
         val size = methodParameters.size
         methdSpecBuilder.addStatement(
             "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
@@ -427,10 +431,12 @@ class CustomProcessor : AbstractProcessor() {
 //                warn("methodParamTypeErasure $methodParamType")
                 val methodParamTypeErasure: String = erasureType2(methodParamType)
                 if (nullable != null) {
-                    methdSpecBuilder.returns(
-                        ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType().copy(nullable = true))
+                    returnTypeName =
+                        ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType().copy(nullable = true)
+                    methdSpecBuilder.returns(returnTypeName)
                 } else {
-                    methdSpecBuilder.returns(ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType())
+                    returnTypeName = ClassName.bestGuess(methodParamTypeErasure).javaToKotlinType()
+                    methdSpecBuilder.returns(returnTypeName)
                 }
                 methdSpecBuilder.modifiers.remove(KModifier.PUBLIC)
                 methdSpecBuilder.addModifiers(KModifier.SUSPEND)
@@ -440,6 +446,7 @@ class CustomProcessor : AbstractProcessor() {
         }
         methdSpecBuilder.addStatement("wrapperMethod.args=args")
         methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities")
+        return returnTypeName
     }
 
     private fun generateSmartBroadcastCode(
