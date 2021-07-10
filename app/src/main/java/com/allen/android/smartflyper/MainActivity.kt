@@ -21,7 +21,7 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         SmartFlyperFactory__app().getApi(InnerService::class.java)
         SmartFlyperDelegate.setSmartFlyper2(object : ISmartFlyper2 {
-            override suspend fun <T> sendCoroutines(method: WrapperMethod?): T? {
+            override suspend fun <T> sendCoroutines(method: WrapperMethod): T? {
                 return getUser() as? T
             }
         })
