@@ -408,13 +408,13 @@ class CustomProcessor : AbstractProcessor() {
                 .build()
             val getApi: FunSpec = FunSpec.builder("getApi")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                .returns(Any::class)
-                .addKdoc("获取api,保证不会为空")
+                .returns(Any::class.asClassName().copy(nullable = true))
+                .addKdoc("获取api,可能为空")
                 .addParameter("cls",
                     Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class)))
                 .addStatement("var clsName = cls.getCanonicalName()!!\n" +
                     "        var api = apiMap.get(clsName)\n" +
-                    "        return api!!")
+                    "        return api")
                 .build()
             val removeApi: FunSpec = FunSpec.builder("removeApi")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
