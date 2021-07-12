@@ -160,50 +160,6 @@ class CustomProcessor : AbstractProcessor() {
                         val smartAppender: SmartAppender? = executableElement.getAnnotation(SmartAppender::class.java)
                         if (smartUri != null || smartBroadCast != null || smartUri2 != null) {
 
-                            val parameterSpecs: MutableList<ParameterSpec> = ArrayList()
-                            //处理参数
-                            for (variableElement in executableElement.parameters) {
-                                //过滤suspend函数的参数
-                                if (variableElement.asType().asTypeName() is ParameterizedTypeName) {
-                                    var rawType =
-                                        (variableElement.asType().asTypeName() as ParameterizedTypeName).rawType
-                                    if (rawType == Continuation::class.asClassName()) {
-                                        continue
-                                    }
-                                }
-                                //追加注解
-//                                val annotationMirrors = variableElement.annotationMirrors.filter {
-//                                    it.annotationType.toString() == SmartParam::class.qualifiedName
-//                                        || it.annotationType.toString() == SmartJson::class.qualifiedName
-//                                        || it.annotationType.toString() == SmartMap::class.qualifiedName
-//                                }
-                                var nullable = variableElement.getAnnotation(Nullable::class.java)
-//                                warn("variableElement=$nullable\n")
-                                //判断是否为mutable类型
-                                val smartParam: SmartParam? = variableElement.getAnnotation(SmartParam::class.java)
-                                val smartMap: SmartMap? = variableElement.getAnnotation(SmartMap::class.java)
-                                var paramTypeName = variableElement.asType().asTypeName()
-                                if (smartParam != null) {
-                                    paramTypeName = paramTypeName.asMutableTypeName(smartParam)
-                                }
-                                if (smartMap != null) {
-                                    paramTypeName = paramTypeName.asMutableTypeName2(smartMap)
-                                }
-                                var parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-                                    paramTypeName.javaToKotlinType())
-                                    .jvmModifiers(variableElement.modifiers)
-                                if (nullable != null) {
-                                    parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-                                        paramTypeName.javaToKotlinType().copy(nullable = true))
-                                        .jvmModifiers(variableElement.modifiers)
-                                }
-//                                if (annotationMirrors.isNotEmpty()) {
-//                                    parameterSpecBuilder.addAnnotation(AnnotationSpec.Companion.get
-//                                    (annotationMirrors[0]))
-//                                }
-                                parameterSpecs.add(parameterSpecBuilder.build())
-                            }
-
                             val typeMirror: TypeMirror = executableElement.returnType
                             val isNullable = executableElement.getAnnotation(Nullable::class.java)
 
@@ -218,7 +174,6 @@ class CustomProcessor : AbstractProcessor() {
                                     .addModifiers(KModifier.OVERRIDE)
                                     .returns(typeName)
                                     .addKdoc("apt自动生成的实现方法")
-                                    .addParameters(parameterSpecs)
                             if (smartUri != null) {
                                 generateSmartUriCode(smartUri, methodSpecBuilder)
                             }
@@ -267,6 +222,50 @@ class CustomProcessor : AbstractProcessor() {
             //生成api接口工厂
             generateFactory()
         }
+    }
+
+    private fun generateFunParams(
+        variableElement: VariableElement,
+        parameterSpecs: MutableList<ParameterSpec>
+    ) {
+        if (variableElement.asType().asTypeName() is ParameterizedTypeName) {
+            var rawType =
+                (variableElement.asType().asTypeName() as ParameterizedTypeName).rawType
+            if (rawType == Continuation::class.asClassName()) {
+                return
+            }
+        }
+        //追加注解
+        //                                val annotationMirrors = variableElement.annotationMirrors.filter {
+        //                                    it.annotationType.toString() == SmartParam::class.qualifiedName
+        //                                        || it.annotationType.toString() == SmartJson::class.qualifiedName
+        //                                        || it.annotationType.toString() == SmartMap::class.qualifiedName
+        //                                }
+        var nullable = variableElement.getAnnotation(Nullable::class.java)
+        //                                warn("variableElement=$nullable\n")
+        //判断是否为mutable类型
+        val smartParam: SmartParam? = variableElement.getAnnotation(SmartParam::class.java)
+        val smartMap: SmartMap? = variableElement.getAnnotation(SmartMap::class.java)
+        var paramTypeName = variableElement.asType().asTypeName()
+        if (smartParam != null) {
+            paramTypeName = paramTypeName.asMutableTypeName(smartParam)
+        }
+        if (smartMap != null) {
+            paramTypeName = paramTypeName.asMutableTypeName2(smartMap)
+        }
+        var parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
+            paramTypeName.javaToKotlinType())
+            .jvmModifiers(variableElement.modifiers)
+        if (nullable != null) {
+            parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
+                paramTypeName.javaToKotlinType().copy(nullable = true))
+                .jvmModifiers(variableElement.modifiers)
+        }
+        //                                if (annotationMirrors.isNotEmpty()) {
+        //                                    parameterSpecBuilder.addAnnotation(AnnotationSpec.Companion.get
+        //                                    (annotationMirrors[0]))
+        //                                }
+        parameterSpecs.add(parameterSpecBuilder.build())
     }
 
     private fun TypeName.asMutableTypeName2(smartMap: SmartMap): TypeName {
@@ -415,24 +414,7 @@ class CustomProcessor : AbstractProcessor() {
                     Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class)))
                 .addStatement("var clsName = cls.getCanonicalName()!!\n" +
                     "        var api = apiMap.get(clsName)\n" +
-                    "        if (api == null) {\n" +
-                    "            try {\n" +
-                    "                api = Class.forName(clsName + %S).newInstance();\n" +
-                    "            }catch (ex: java.lang.ClassNotFoundException ) {\n" +
-                    "                android.util.Log.e(\"SmartFlyperFactory\", \"start get inner class Delegate\")\n" +
-                    "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"))\n" +
-                    "                clsName = clsName.substring(0, clsName.lastIndexOf(\".\"))\n" +
-                    "                try {\n" +
-                    "                    api = Class.forName(clsName +\".\"+cls.getSimpleName()+ %S).newInstance()\n" +
-                    "                } catch (e1: Exception) {\n" +
-                    "                    %L.e(\"SmartFlyperFactory\", \"getApi inner class error \", e1)\n" +
-                    "                }                                       \n" +
-                    "            } catch (e: Exception) {\n" +
-                    "                %L.e(\"SmartFlyperFactory\", \"getApi error \", e)\n" +
-                    "            }\n" +
-                    "            apiMap.put(clsName, api!!)\n" +
-                    "        }\n" +
-                    "        return api!!", SUFFIX_CLASSNAME, SUFFIX_CLASSNAME, "android.util.Log", "android.util.Log")
+                    "        return api!!")
                 .build()
             val removeApi: FunSpec = FunSpec.builder("removeApi")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
@@ -517,6 +499,7 @@ class CustomProcessor : AbstractProcessor() {
         methdSpecBuilder.addStatement(
             "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
         methdSpecBuilder.addStatement("var args = arrayOfNulls<Any>(%L)", size)
+        val parameterSpecs: MutableList<ParameterSpec> = ArrayList()
         for (i in 0 until size) {
             val parameter: VariableElement = methodParameters[i]
             val smartParam: SmartParam? = parameter.getAnnotation(SmartParam::class.java)
@@ -555,7 +538,10 @@ class CustomProcessor : AbstractProcessor() {
             } else {
                 methdSpecBuilder.addStatement("args[%L]=%L", i, parameter.simpleName.toString())
             }
+            //生成方法参数列表
+            generateFunParams(parameter, parameterSpecs)
         }
+        methdSpecBuilder.addParameters(parameterSpecs)
         methdSpecBuilder.addStatement("wrapperMethod.args=args")
         methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities")
         return returnTypeName

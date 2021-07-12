@@ -5,6 +5,6 @@ package com.yy.core.yyp.smart
  */
 interface ISmartFlyperFactory {
     fun initApi()
-    fun getApi(cls: Class<out Any>): Any
+    fun getApi(cls: Class<out Any>): Any?
     fun removeApi(cls: Class<out Any>): Boolean
 }
