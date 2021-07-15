@@ -101,7 +101,34 @@ public interface IRoomInfo{
 *注意*
 - 在接口中不能有其他非注解形式的抽象方法，否则编译不过
 - LazyInit注解默认是false，表示是否需要延迟创建api实现类;如果true,在使用SmartFlyper.getInstance().Create()的时候才会实例化。
+### 支持协程
++ 1.需要升级到2.0版本以上
++ 2.使用@SmartUri2注解
++ 3.返回值类型需要为可空类型
++ 4.如果是Mutable类型的集合，需要标记isMutable
+```kotlin
+interface ITestService2 {
 
-[kotlinpoet参考demo](https://blog.csdn.net/qq_22090073/article/details/110622704)
-[kotlinpoet使用指南](https://enzowyf.github.io/kotlinpoet.html)
+    @SmartUri2(max = 101, req = 310, rsp = 311)
+    suspend fun getUserInfo(@SmartParam("uid") uid: List<Long>): BaseEntity?
+
+
+    @SmartUri2(max = 101, req = 312, rsp = 313)
+    suspend fun getUserInfo2(@SmartParam("uid", isMutableList = true) uid: MutableList<Long>): UserEntity?
+
+    @SmartUri2(max = 101, req = 312, rsp = 313)
+    suspend fun getUserInfo3(@SmartParam("uid") uid: Long): String?
+}
+```
++ 在Activity或者Fragment中使用
+```kotlin
+//在mainScope中启动
+        launch {
+            val userEntity = SmartFlyper.getInstance().create(ITestService2::class.java).getUserInfo2(mutableListOf<Long>(18398343))
+            Log.d("MainActivity", "onCreate: launch ${userEntity?.name}")
+        }
+```
+> 参考
+- [kotlinpoet参考demo](https://blog.csdn.net/qq_22090073/article/details/110622704)
+- [kotlinpoet使用指南](https://enzowyf.github.io/kotlinpoet.html)
 
