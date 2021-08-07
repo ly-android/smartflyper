@@ -75,7 +75,9 @@ public class WrapperMethod {
             }
             if (isSmartBroadcast) {
                 paramsTypes = Utils.getParamGenericTypes(method);
-                if (paramsTypes != null && !paramsTypes.equals(String.class) && !(BaseEntity.class.isAssignableFrom(paramsTypes))) {
+                if (paramsTypes != null && !paramsTypes.equals(String.class) &&
+                    !(BaseEntity.class.isAssignableFrom(paramsTypes))) {
+                    System.out.println("请检查：" + method.getName());
                     throw new IllegalArgumentException("参数必须是SmartObservelResult<T>,T is String or BaseEntity类型");
                 }
                 if (!String.class.equals(method.getReturnType())) {
@@ -84,10 +86,12 @@ public class WrapperMethod {
             } else {
                 returnTypeParams = Utils.getTurnTypeGenericTypes(method);
                 if (returnTypeParams == null) {
+                    System.out.println("请检查：" + method.getName());
                     throw new IllegalArgumentException("方法返回类型必须是Observable<T>,T is String or BaseEntity");
                 }
                 Class cls = (Class) returnTypeParams[0];
                 if (!cls.equals(String.class) && !(BaseEntity.class.isAssignableFrom(cls))) {
+                    System.out.println("请检查：" + cls.getName());
                     throw new IllegalArgumentException("方法返回类型必须是Observable<T>,T is String or BaseEntity");
                 }
             }
@@ -122,15 +126,15 @@ public class WrapperMethod {
     @Override
     public String toString() {
         return "WrapperMethod{" +
-                "appId=" + appId +
-                "max=" + max +
-                ", min_req=" + min_req +
-                ", min_rsp=" + min_rsp +
-                ", params=" + Arrays.toString(params) +
-                ", returnTypeParams=" + returnTypeParams +
-                ", isSmartBroadcast=" + isSmartBroadcast +
-                ", smartObserverResult=" + smartObserverResult +
-                ", paramsTypes=" + paramsTypes +
-                '}';
+            "appId=" + appId +
+            "max=" + max +
+            ", min_req=" + min_req +
+            ", min_rsp=" + min_rsp +
+            ", params=" + Arrays.toString(params) +
+            ", returnTypeParams=" + returnTypeParams +
+            ", isSmartBroadcast=" + isSmartBroadcast +
+            ", smartObserverResult=" + smartObserverResult +
+            ", paramsTypes=" + paramsTypes +
+            '}';
     }
 }
