@@ -476,6 +476,7 @@ class CustomProcessor : AbstractProcessor() {
                         methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%T::class.java",
                             returnParameterType.asTypeName())
                     } else {
+                        error(" >>>>>1 returnParameterType:$returnParameterType , erasureParamers: $erasureParamers")
                         error(
                             " >>>>>1 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
                         error("$errorReturnInfo >>>>>1")
