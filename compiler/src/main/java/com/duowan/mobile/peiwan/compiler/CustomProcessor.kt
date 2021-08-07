@@ -476,15 +476,23 @@ class CustomProcessor : AbstractProcessor() {
                         methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%T::class.java",
                             returnParameterType.asTypeName())
                     } else {
+                        error(
+                            " >>>>>1 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
                         error("$errorReturnInfo >>>>>1")
                     }
                 } else {
+                    error(
+                        " >>>>>2 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
                     error("$errorReturnInfo >>>>>2")
                 }
             } else {
+                error(
+                    " >>>>>3 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
                 error("$errorReturnInfo >>>>>3")
             }
         } else {
+            error(
+                " >>>>>4 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
             error("$errorReturnInfo >>>>>4")
         }
     }

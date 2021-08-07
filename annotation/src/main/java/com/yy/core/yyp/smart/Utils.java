@@ -55,6 +55,7 @@ public class Utils {
     static Class getParamGenericTypes(Method method){
         Type[] types=method.getGenericParameterTypes();
         if(types==null){
+            System.out.println("请检查：" + method.getName());
             throw new IllegalArgumentException("参数必须是SmartObservelResult<T>,T is String or BaseEntity类型");
         }
         Type type=types[0];
