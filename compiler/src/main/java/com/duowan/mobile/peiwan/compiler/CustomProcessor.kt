@@ -25,16 +25,13 @@ import com.yy.core.yyp.smart.WrapperMethod
 import com.yy.core.yyp.smart.anotation.LazyInit
 import com.yy.core.yyp.smart.anotation.SmartAppender
 import com.yy.core.yyp.smart.anotation.SmartBroadCast
+import com.yy.core.yyp.smart.anotation.SmartBroadCast2
 import com.yy.core.yyp.smart.anotation.SmartJson
 import com.yy.core.yyp.smart.anotation.SmartMap
 import com.yy.core.yyp.smart.anotation.SmartParam
 import com.yy.core.yyp.smart.anotation.SmartUri
 import com.yy.core.yyp.smart.anotation.SmartUri2
 import org.jetbrains.annotations.Nullable
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.LinkedHashMap
-import java.util.LinkedHashSet
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -86,6 +83,7 @@ class CustomProcessor : AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> {
         val types: MutableSet<String> = LinkedHashSet()
         types.add(SmartBroadCast::class.java.canonicalName)
+        types.add(SmartBroadCast2::class.java.canonicalName)
         types.add(SmartUri::class.java.canonicalName)
         types.add(SmartUri2::class.java.canonicalName)
         return types
@@ -119,8 +117,12 @@ class CustomProcessor : AbstractProcessor() {
         val executableElements3: MutableSet<ExecutableElement> =
             ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
                 SmartUri2::class.java))
+        val executableElements4: MutableSet<ExecutableElement> =
+            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
+                SmartBroadCast2::class.java))
         executableElements3.addAll(executableElements)
         executableElements3.addAll(executableElements2)
+        executableElements3.addAll(executableElements4)
         parse(executableElements3)
         generateDelegate()
     }
@@ -157,8 +159,10 @@ class CustomProcessor : AbstractProcessor() {
                         val smartUri2: SmartUri2? = executableElement.getAnnotation(SmartUri2::class.java)
                         val smartBroadCast: SmartBroadCast? = executableElement.getAnnotation(SmartBroadCast::class
                             .java)
+                        val smartBroadCast2: SmartBroadCast2? =
+                            executableElement.getAnnotation(SmartBroadCast2::class.java)
                         val smartAppender: SmartAppender? = executableElement.getAnnotation(SmartAppender::class.java)
-                        if (smartUri != null || smartBroadCast != null || smartUri2 != null) {
+                        if (smartUri != null || smartBroadCast != null || smartUri2 != null || smartBroadCast2 != null) {
 
                             val typeMirror: TypeMirror = executableElement.returnType
                             val isNullable = executableElement.getAnnotation(Nullable::class.java)
@@ -183,8 +187,12 @@ class CustomProcessor : AbstractProcessor() {
                             if (smartBroadCast != null) {
                                 generateSmartBroadcastCode(smartBroadCast, methodParameters, methodSpecBuilder)
                             }
+                            if (smartBroadCast2 != null) {
+                                generateSmartBroadcast2Code(smartBroadCast2, methodParameters, methodSpecBuilder)
+                            }
                             //校验和生成方法形式参数类型
-                            val returnTypeName = generateParamsCode(methodParameters, isNullable, methodSpecBuilder)
+                            val returnTypeName =
+                                generateParamsCode(methodParameters, isNullable, methodSpecBuilder, smartBroadCast2)
                             //如果是类或接口类型,检验返回类型的正确性
                             checkAndGenerateCode(typeMirror, returnTypeName, methodSpecBuilder)
                             if (smartAppender != null) {
@@ -200,6 +208,9 @@ class CustomProcessor : AbstractProcessor() {
                                     SmartFlyperDelegate::class.java)
                             } else if (smartUri2 != null) {
                                 methodSpecBuilder.addStatement("return %T.sendCoroutines(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java)
+                            } else if (smartBroadCast2 != null) {
+                                methodSpecBuilder.addStatement("return %T.registerCoroutinesBroadcast(wrapperMethod)",
                                     SmartFlyperDelegate::class.java)
                             }
                             methodSpecList.add(methodSpecBuilder.build())
@@ -499,15 +510,17 @@ class CustomProcessor : AbstractProcessor() {
     }
 
     private fun generateParamsCode(
-        methodParameters: List<VariableElement>, nullable: Annotation?, methdSpecBuilder:
-        FunSpec
-        .Builder
+        methodParameters: List<VariableElement>, nullable: Annotation?, methdSpecBuilder: FunSpec.Builder,
+        smartBroadCast2: SmartBroadCast2?
     ): TypeName? {
         var returnTypeName: TypeName? = null
         val size = methodParameters.size
-        methdSpecBuilder.addStatement(
-            "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
-        methdSpecBuilder.addStatement("var args = arrayOfNulls<Any>(%L)", size)
+        val isSmartBroadCast2 = smartBroadCast2 != null
+        if (!isSmartBroadCast2) {
+            methdSpecBuilder.addStatement(
+                "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
+            methdSpecBuilder.addStatement("var args = arrayOfNulls<Any>(%L)", size)
+        }
         val parameterSpecs: MutableList<ParameterSpec> = ArrayList()
         for (i in 0 until size) {
             val parameter: VariableElement = methodParameters[i]
@@ -550,10 +563,31 @@ class CustomProcessor : AbstractProcessor() {
             //生成方法参数列表
             generateFunParams(parameter, parameterSpecs)
         }
-        methdSpecBuilder.addParameters(parameterSpecs)
-        methdSpecBuilder.addStatement("wrapperMethod.args=args")
-        methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities")
+        if (!isSmartBroadCast2) {
+            methdSpecBuilder.addParameters(parameterSpecs)
+            methdSpecBuilder.addStatement("wrapperMethod.args=args")
+            methdSpecBuilder.addStatement("wrapperMethod.params=paramEntities")
+        }
         return returnTypeName
+    }
+
+    private fun generateSmartBroadcast2Code(
+        smartBroadCast: SmartBroadCast2, methodParameters: List<VariableElement>, methdSpecBuilder: FunSpec.Builder
+    ) {
+        methdSpecBuilder.addStatement("var wrapperMethod=%T()", WrapperMethod::class)
+            .addStatement("wrapperMethod.max=%L", smartBroadCast.max)
+            .addStatement("wrapperMethod.min_rsp=%L", smartBroadCast.min)
+            .addStatement("wrapperMethod.appId=%L", smartBroadCast.appId)
+            .addStatement("wrapperMethod.isSmartBroadcast=true")
+        //获取广播中SmartObserverResult的参数类型
+        if (methodParameters.size != 1) {
+            val varType = methodParameters[0].asType()
+            //参数类型
+            val methodParamErasure = erasureType(varType)
+            if (methodParamErasure != CONTINUATION_TYPE) {
+                error("广播不需要参数")
+            }
+        }
     }
 
     private fun generateSmartBroadcastCode(

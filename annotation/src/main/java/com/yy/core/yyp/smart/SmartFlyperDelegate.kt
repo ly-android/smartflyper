@@ -24,4 +24,9 @@ object SmartFlyperDelegate {
     suspend fun <T> sendCoroutines(method: WrapperMethod): T? {
         return smartFlyper2?.sendCoroutines(method)
     }
+
+    @JvmStatic
+    suspend fun <T> registerCoroutinesBroadcast(method: WrapperMethod): T? {
+        return smartFlyper2?.registerCoroutinesBroadcast(method)
+    }
 }
