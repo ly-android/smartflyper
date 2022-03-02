@@ -4,6 +4,7 @@ import com.yy.core.room.protocol.BaseEntity
 import com.yy.core.yyp.smart.anotation.SmartBroadCast2
 import com.yy.core.yyp.smart.anotation.SmartParam
 import com.yy.core.yyp.smart.anotation.SmartUri2
+import kotlinx.coroutines.channels.Channel
 
 /**
  * Time:2021/7/4 8:34 上午
@@ -24,5 +25,5 @@ interface ITestService2 {
 
     //主持协程类型的广播
     @SmartBroadCast2(max = 101, min = 310)
-    suspend fun onGetRoomDetailInfoBroadcast(): BaseEntity?
+    fun onGetRoomDetailInfoBroadcast(): Channel<BaseEntity>?
 }
