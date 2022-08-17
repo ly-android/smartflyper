@@ -1,5 +1,7 @@
 package com.yy.core.yyp.smart
 
+import kotlinx.coroutines.channels.Channel
+
 /**
  * Created by liyong on 2018/10/16.
  */
@@ -23,5 +25,10 @@ object SmartFlyperDelegate {
     @JvmStatic
     suspend fun <T> sendCoroutines(method: WrapperMethod): T? {
         return smartFlyper2?.sendCoroutines(method)
+    }
+
+    @JvmStatic
+    fun <T> registerCoroutinesBroadcast(method: WrapperMethod): Channel<T>? {
+        return smartFlyper2?.registerCoroutinesBroadcast(method)
     }
 }
