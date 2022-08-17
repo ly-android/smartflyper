@@ -122,6 +122,9 @@ class CustomProcessor : AbstractProcessor() {
         executableElements3.addAll(executableElements)
         executableElements3.addAll(executableElements2)
         parse(executableElements3)
+        typeElementListMap = typeElementListMap?.toSortedMap { o1, o2 ->
+            o1?.qualifiedName.toString().compareTo(o2?.qualifiedName.toString())
+        }
         generateDelegate()
     }
 
