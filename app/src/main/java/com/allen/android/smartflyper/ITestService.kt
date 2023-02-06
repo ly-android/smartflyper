@@ -25,6 +25,6 @@ interface ITestService {
         @SmartParam("version", isMutableSet = true) version: MutableSet<String>
     ): Observable<String>
 
-    @SmartBroadCast(max = 101, min = 310)
+    @SmartBroadCast(max = 101, min = 310, sync = false)
     fun onGetRoomDetailInfoBroadcast(observerResult: SmartObserverResult<BaseEntity>): String?
 }

@@ -24,4 +24,6 @@ public @interface SmartBroadCast {
      * @return
      */
     int appId() default 0;
+
+    boolean sync() default true;
 }

@@ -585,6 +585,7 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.max=%L", smartBroadCast.max)
             .addStatement("wrapperMethod.min_rsp=%L", smartBroadCast.min)
             .addStatement("wrapperMethod.appId=%L", smartBroadCast.appId)
+            .addStatement("wrapperMethod.sync=%L", smartBroadCast.sync)
             .addStatement("wrapperMethod.isSmartBroadcast=true")
         //获取广播中SmartObserverResult的参数类型
         if (methodParameters.isNotEmpty()) {
@@ -599,6 +600,7 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.max=%L", smartBroadCast.max)
             .addStatement("wrapperMethod.min_rsp=%L", smartBroadCast.min)
             .addStatement("wrapperMethod.appId=%L", smartBroadCast.appId)
+            .addStatement("wrapperMethod.sync=%L", smartBroadCast.sync)
             .addStatement("wrapperMethod.isSmartBroadcast=true")
         //获取广播中SmartObserverResult的参数类型
         if (methodParameters.size != 1) {
@@ -635,6 +637,7 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.max=%L", smartUri.max)
             .addStatement("wrapperMethod.min_req=%L", smartUri.req)
             .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
+            .addStatement("wrapperMethod.sync=%L", smartUri.sync)
     }
 
     private fun generateSmartUri2Code(smartUri: SmartUri2, methedSpecBuilder: FunSpec.Builder) {
@@ -643,6 +646,7 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.max=%L", smartUri.max)
             .addStatement("wrapperMethod.min_req=%L", smartUri.req)
             .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
+            .addStatement("wrapperMethod.sync=%L", smartUri.sync)
     }
 
     private fun isInterface(typeMirror: TypeMirror): Boolean {

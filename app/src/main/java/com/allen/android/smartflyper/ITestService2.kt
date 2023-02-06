@@ -13,7 +13,7 @@ import kotlinx.coroutines.channels.Channel
  */
 interface ITestService2 {
 
-    @SmartUri2(max = 101, req = 310, rsp = 311)
+    @SmartUri2(max = 101, req = 310, rsp = 311, sync = false)
     suspend fun getUserInfo(@SmartParam("uid") uid: List<Long>): BaseEntity?
 
 

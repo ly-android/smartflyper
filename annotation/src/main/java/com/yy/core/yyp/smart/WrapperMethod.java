@@ -31,6 +31,7 @@ public class WrapperMethod {
     public boolean includeUid = false;
     public boolean includePf = false;
     public boolean includeVersion = false;
+    public boolean sync = true;
 
     public WrapperMethod(Builder builder) {
         this.appId = builder.appId;
@@ -44,6 +45,7 @@ public class WrapperMethod {
         this.isSmartBroadcast = builder.isSmartBroadcast;
         this.paramsTypes = builder.paramsTypes;
         this.args = builder.args;
+        this.sync = builder.sync;
     }
 
     public WrapperMethod() {
@@ -64,6 +66,7 @@ public class WrapperMethod {
         public boolean includeUid = false;
         public boolean includePf = false;
         public boolean includeVersion = false;
+        public boolean sync = true;
 
         public Builder(Method method) {
             this.method = method;
@@ -106,12 +109,14 @@ public class WrapperMethod {
                 min_req = smartUri.req();
                 min_rsp = smartUri.rsp();
                 appId = smartUri.appId();
+                sync = smartUri.sync();
             } else if (annotation instanceof SmartBroadCast) {
                 SmartBroadCast smartBroadCast = (SmartBroadCast) annotation;
                 max = smartBroadCast.max();
                 min_rsp = smartBroadCast.min();
                 isSmartBroadcast = true;
                 appId = smartBroadCast.appId();
+                sync = smartBroadCast.sync();
             } else if (annotation instanceof SmartAppender) {
                 SmartAppender appender = (SmartAppender) annotation;
                 includePf = appender.includePf();
@@ -135,6 +140,7 @@ public class WrapperMethod {
             ", isSmartBroadcast=" + isSmartBroadcast +
             ", smartObserverResult=" + smartObserverResult +
             ", paramsTypes=" + paramsTypes +
+            ", sync=" + sync +
             '}';
     }
 }

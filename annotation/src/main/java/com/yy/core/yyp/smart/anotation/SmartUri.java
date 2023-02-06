@@ -22,7 +22,10 @@ public @interface SmartUri {
 
     /**
      * svc通道appId
+     *
      * @return
      */
     int appId() default 0;
+
+    boolean sync() default true;
 }
