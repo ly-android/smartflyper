@@ -3,7 +3,9 @@ package com.yy.core.yyp.smart;
 import com.yy.core.room.protocol.BaseEntity;
 import com.yy.core.yyp.smart.anotation.SmartAppender;
 import com.yy.core.yyp.smart.anotation.SmartBroadCast;
+import com.yy.core.yyp.smart.anotation.SmartBroadCast2;
 import com.yy.core.yyp.smart.anotation.SmartUri;
+import com.yy.core.yyp.smart.anotation.SmartUri2;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
@@ -32,6 +34,8 @@ public class WrapperMethod {
     public boolean includePf = false;
     public boolean includeVersion = false;
     public boolean sync = true;
+    public int retryCount = 0;
+    public int timeOut = 15000;
 
     public WrapperMethod(Builder builder) {
         this.appId = builder.appId;
@@ -46,6 +50,8 @@ public class WrapperMethod {
         this.paramsTypes = builder.paramsTypes;
         this.args = builder.args;
         this.sync = builder.sync;
+        this.retryCount = builder.retryCount;
+        this.timeOut = builder.timeOut;
     }
 
     public WrapperMethod() {
@@ -67,6 +73,10 @@ public class WrapperMethod {
         public boolean includePf = false;
         public boolean includeVersion = false;
         public boolean sync = true;
+
+        public int retryCount = 0;
+
+        public int timeOut = 15000;
 
         public Builder(Method method) {
             this.method = method;
@@ -110,8 +120,26 @@ public class WrapperMethod {
                 min_rsp = smartUri.rsp();
                 appId = smartUri.appId();
                 sync = smartUri.sync();
+                timeOut = smartUri.timeOut();
+                retryCount = smartUri.retryCount();
+            } else if (annotation instanceof SmartUri2) {
+                SmartUri2 smartUri = (SmartUri2) annotation;
+                max = smartUri.max();
+                min_req = smartUri.req();
+                min_rsp = smartUri.rsp();
+                appId = smartUri.appId();
+                sync = smartUri.sync();
+                timeOut = smartUri.timeOut();
+                retryCount = smartUri.retryCount();
             } else if (annotation instanceof SmartBroadCast) {
                 SmartBroadCast smartBroadCast = (SmartBroadCast) annotation;
+                max = smartBroadCast.max();
+                min_rsp = smartBroadCast.min();
+                isSmartBroadcast = true;
+                appId = smartBroadCast.appId();
+                sync = smartBroadCast.sync();
+            } else if (annotation instanceof SmartBroadCast2) {
+                SmartBroadCast2 smartBroadCast = (SmartBroadCast2) annotation;
                 max = smartBroadCast.max();
                 min_rsp = smartBroadCast.min();
                 isSmartBroadcast = true;

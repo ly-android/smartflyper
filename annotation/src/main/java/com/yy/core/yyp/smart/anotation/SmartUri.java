@@ -28,4 +28,8 @@ public @interface SmartUri {
     int appId() default 0;
 
     boolean sync() default true;
+
+    int timeOut() default 15000;
+
+    int retryCount() default 0;
 }

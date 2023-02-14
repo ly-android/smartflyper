@@ -18,7 +18,7 @@ interface ITestService {
         @SmartParam("pf") pf: Map<String, String>
     ): Observable<String>?
 
-    @SmartUri(max = 101, req = 308, rsp = 309)
+    @SmartUri(max = 101, req = 308, rsp = 309, timeOut = 10000, retryCount = 10)
     fun getRoomDetailInfo(
         @SmartParam("channelId") channelIds: List<Long>,
         @SmartParam("uid") uid: HashSet<Long>,

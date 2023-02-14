@@ -638,6 +638,8 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.min_req=%L", smartUri.req)
             .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
             .addStatement("wrapperMethod.sync=%L", smartUri.sync)
+            .addStatement("wrapperMethod.timeOut=%L", smartUri.timeOut)
+            .addStatement("wrapperMethod.retryCount=%L", smartUri.retryCount)
     }
 
     private fun generateSmartUri2Code(smartUri: SmartUri2, methedSpecBuilder: FunSpec.Builder) {
@@ -647,6 +649,8 @@ class CustomProcessor : AbstractProcessor() {
             .addStatement("wrapperMethod.min_req=%L", smartUri.req)
             .addStatement("wrapperMethod.min_rsp=%L", smartUri.rsp)
             .addStatement("wrapperMethod.sync=%L", smartUri.sync)
+            .addStatement("wrapperMethod.timeOut=%L", smartUri.timeOut)
+            .addStatement("wrapperMethod.retryCount=%L", smartUri.retryCount)
     }
 
     private fun isInterface(typeMirror: TypeMirror): Boolean {
