@@ -31,6 +31,8 @@ import com.yy.core.yyp.smart.anotation.SmartMap
 import com.yy.core.yyp.smart.anotation.SmartParam
 import com.yy.core.yyp.smart.anotation.SmartUri
 import com.yy.core.yyp.smart.anotation.SmartUri2
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType
 import org.jetbrains.annotations.Nullable
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
@@ -57,6 +59,7 @@ import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
 
 @AutoService(Processor::class)
+@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.AGGREGATING)
 class CustomProcessor : AbstractProcessor() {
     private var mFiler //文件相关的辅助类
         : Filer? = null
@@ -100,7 +103,7 @@ class CustomProcessor : AbstractProcessor() {
     }
 
     override fun process(set: Set<TypeElement>, roundEnvironment: RoundEnvironment): Boolean {
-        mMessager!!.printMessage(Diagnostic.Kind.NOTE, "process...")
+        mMessager!!.printMessage(Diagnostic.Kind.ERROR, "process...")
         if (!roundEnvironment.processingOver()) {
             parseAnonation(roundEnvironment)
         }
