@@ -59,7 +59,7 @@ import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
 
 @AutoService(Processor::class)
-@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.AGGREGATING)
+@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.ISOLATING)
 class CustomProcessor : AbstractProcessor() {
     private var mFiler //文件相关的辅助类
         : Filer? = null
@@ -231,6 +231,7 @@ class CustomProcessor : AbstractProcessor() {
                     val proxyClass: TypeSpec =
                         TypeSpec.classBuilder(typeElement.simpleName.toString() + SUFFIX_CLASSNAME)
                             .addModifiers(KModifier.PUBLIC)
+                            .addOriginatingElement(typeElement)
                             .addSuperinterface(typeElement.asClassName())
                             .addFunctions(methodSpecList)
                             .build()
@@ -300,6 +301,7 @@ class CustomProcessor : AbstractProcessor() {
                         }.toTypedArray()
                     )
                 }
+
                 is WildcardTypeName -> {
                     if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
                     else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
@@ -327,6 +329,7 @@ class CustomProcessor : AbstractProcessor() {
                         }.toTypedArray()
                     )
                 }
+
                 is WildcardTypeName -> {
                     if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
                     else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
@@ -350,6 +353,7 @@ class CustomProcessor : AbstractProcessor() {
                         }.toTypedArray()
                     )
                 }
+
                 is WildcardTypeName -> {
                     if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
                     else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
@@ -372,6 +376,7 @@ class CustomProcessor : AbstractProcessor() {
                         }.toTypedArray()
                     )
                 }
+
                 is WildcardTypeName -> {
                     if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
                     else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
@@ -394,7 +399,6 @@ class CustomProcessor : AbstractProcessor() {
             return
         }
         try {
-
             val fieldBuild: PropertySpec.Builder = PropertySpec.builder("apiMap",
                 LinkedHashMap::class.asClassName().parameterizedBy(String::class.asClassName(), Any::class
                     .asClassName()),
@@ -765,6 +769,7 @@ class CustomProcessor : AbstractProcessor() {
                 }.toTypedArray()
             )
         }
+
         is WildcardTypeName -> {
             if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
             else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
