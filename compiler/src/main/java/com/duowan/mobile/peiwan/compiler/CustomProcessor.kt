@@ -103,7 +103,7 @@ class CustomProcessor : AbstractProcessor() {
     }
 
     override fun process(set: Set<TypeElement>, roundEnvironment: RoundEnvironment): Boolean {
-        mMessager!!.printMessage(Diagnostic.Kind.ERROR, "process...")
+        mMessager!!.printMessage(Diagnostic.Kind.NOTE, "process...")
         if (!roundEnvironment.processingOver()) {
             parseAnonation(roundEnvironment)
         }
