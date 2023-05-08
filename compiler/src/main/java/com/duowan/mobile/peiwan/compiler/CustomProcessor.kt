@@ -59,7 +59,7 @@ import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
 
 @AutoService(Processor::class)
-@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.ISOLATING)
+@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.AGGREGATING)
 class CustomProcessor : AbstractProcessor() {
     private var mFiler //文件相关的辅助类
         : Filer? = null
@@ -350,8 +350,7 @@ class CustomProcessor : AbstractProcessor() {
                     MUTABLE_LIST.parameterizedBy(
                         *typeArguments.map {
                             it.javaToKotlinType()
-                        }.toTypedArray()
-                    )
+                        }.toTypedArray()                    )
                 }
 
                 is WildcardTypeName -> {
@@ -405,7 +404,8 @@ class CustomProcessor : AbstractProcessor() {
                 KModifier.PRIVATE)
             fieldBuild.initializer("LinkedHashMap()")
             val builder: CodeBlock.Builder = CodeBlock.builder()
-            for (key in typeElementListMap!!.keys) {
+            val enclosingElements = typeElementListMap!!.keys
+            for (key in enclosingElements) {
                 val lazyInit: LazyInit? = key.getAnnotation(LazyInit::class.java)
                 var cls: String = key.qualifiedName.toString() + SUFFIX_CLASSNAME
                 if (key.nestingKind == NestingKind.MEMBER) {
@@ -455,7 +455,7 @@ class CustomProcessor : AbstractProcessor() {
                     "        }\n" +
                     "        return false")
                 .build()
-            val factory: TypeSpec = TypeSpec.classBuilder("SmartFlyperFactory__$moduleName")
+            val factoryBuilder: TypeSpec.Builder = TypeSpec.classBuilder("SmartFlyperFactory__$moduleName")
                 .addModifiers(KModifier.PUBLIC)
                 .addSuperinterface(ISmartFlyperFactory::class)
                 .addKdoc("apt自动生成,不需要修改")
@@ -464,7 +464,10 @@ class CustomProcessor : AbstractProcessor() {
                 .addFunction(initApi)
                 .addFunction(getApi)
                 .addFunction(removeApi)
-                .build()
+            for (key in enclosingElements) {
+                factoryBuilder.addOriginatingElement(key)
+            }
+            val factory = factoryBuilder.build()
             val javaFile: FileSpec = FileSpec.builder("com.yy.core.yyp.smart", factory.name!!)
                 .addType(factory)
                 .build()
