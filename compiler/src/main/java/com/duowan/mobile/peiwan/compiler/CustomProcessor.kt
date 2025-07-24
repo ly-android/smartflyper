@@ -112,17 +112,29 @@ class CustomProcessor : AbstractProcessor() {
 
     private fun parseAnonation(roundEnvironment: RoundEnvironment) {
         val executableElements: MutableSet<ExecutableElement> =
-            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
-                SmartUri::class.java))
+            ElementFilter.methodsIn(
+                roundEnvironment.getElementsAnnotatedWith(
+                    SmartUri::class.java
+                )
+            )
         val executableElements2: MutableSet<ExecutableElement> =
-            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
-                SmartBroadCast::class.java))
+            ElementFilter.methodsIn(
+                roundEnvironment.getElementsAnnotatedWith(
+                    SmartBroadCast::class.java
+                )
+            )
         val executableElements3: MutableSet<ExecutableElement> =
-            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
-                SmartUri2::class.java))
+            ElementFilter.methodsIn(
+                roundEnvironment.getElementsAnnotatedWith(
+                    SmartUri2::class.java
+                )
+            )
         val executableElements4: MutableSet<ExecutableElement> =
-            ElementFilter.methodsIn(roundEnvironment.getElementsAnnotatedWith(
-                SmartBroadCast2::class.java))
+            ElementFilter.methodsIn(
+                roundEnvironment.getElementsAnnotatedWith(
+                    SmartBroadCast2::class.java
+                )
+            )
         executableElements3.addAll(executableElements)
         executableElements3.addAll(executableElements2)
         executableElements3.addAll(executableElements4)
@@ -163,8 +175,10 @@ class CustomProcessor : AbstractProcessor() {
                     for (executableElement in executableElements!!) {
                         val smartUri: SmartUri? = executableElement.getAnnotation(SmartUri::class.java)
                         val smartUri2: SmartUri2? = executableElement.getAnnotation(SmartUri2::class.java)
-                        val smartBroadCast: SmartBroadCast? = executableElement.getAnnotation(SmartBroadCast::class
-                            .java)
+                        val smartBroadCast: SmartBroadCast? = executableElement.getAnnotation(
+                            SmartBroadCast::class
+                                .java
+                        )
                         val smartBroadCast2: SmartBroadCast2? =
                             executableElement.getAnnotation(SmartBroadCast2::class.java)
                         val smartAppender: SmartAppender? = executableElement.getAnnotation(SmartAppender::class.java)
@@ -207,22 +221,32 @@ class CustomProcessor : AbstractProcessor() {
                             //如果是类或接口类型,检验返回类型的正确性
                             checkAndGenerateCode(typeMirror, returnTypeName, methodSpecBuilder)
                             if (smartAppender != null) {
-                                methodSpecBuilder.addStatement("wrapperMethod.includeVersion=%L",
-                                    smartAppender.includeVersion)
-                                methodSpecBuilder.addStatement("wrapperMethod.includeUid=%L",
-                                    smartAppender.includeUid)
+                                methodSpecBuilder.addStatement(
+                                    "wrapperMethod.includeVersion=%L",
+                                    smartAppender.includeVersion
+                                )
+                                methodSpecBuilder.addStatement(
+                                    "wrapperMethod.includeUid=%L",
+                                    smartAppender.includeUid
+                                )
                                 methodSpecBuilder.addStatement("wrapperMethod.includePf=%L", smartAppender.includePf)
                             }
                             //生成返回值
                             if (smartUri != null || smartBroadCast != null) {
-                                methodSpecBuilder.addStatement("return %T.send(wrapperMethod)",
-                                    SmartFlyperDelegate::class.java)
+                                methodSpecBuilder.addStatement(
+                                    "return %T.send(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java
+                                )
                             } else if (smartUri2 != null) {
-                                methodSpecBuilder.addStatement("return %T.sendCoroutines(wrapperMethod)",
-                                    SmartFlyperDelegate::class.java)
+                                methodSpecBuilder.addStatement(
+                                    "return %T.sendCoroutines(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java
+                                )
                             } else if (smartBroadCast2 != null) {
-                                methodSpecBuilder.addStatement("return %T.registerCoroutinesBroadcast(wrapperMethod)",
-                                    SmartFlyperDelegate::class.java)
+                                methodSpecBuilder.addStatement(
+                                    "return %T.registerCoroutinesBroadcast(wrapperMethod)",
+                                    SmartFlyperDelegate::class.java
+                                )
                             }
                             methodSpecList.add(methodSpecBuilder.build())
                         }
@@ -276,12 +300,16 @@ class CustomProcessor : AbstractProcessor() {
         if (smartMap != null) {
             paramTypeName = paramTypeName.asMutableTypeName2(smartMap)
         }
-        var parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-            paramTypeName.javaToKotlinType())
+        var parameterSpecBuilder = ParameterSpec.builder(
+            variableElement.simpleName.toString(),
+            paramTypeName.javaToKotlinType()
+        )
             .jvmModifiers(variableElement.modifiers)
         if (nullable != null) {
-            parameterSpecBuilder = ParameterSpec.builder(variableElement.simpleName.toString(),
-                paramTypeName.javaToKotlinType().copy(nullable = true))
+            parameterSpecBuilder = ParameterSpec.builder(
+                variableElement.simpleName.toString(),
+                paramTypeName.javaToKotlinType().copy(nullable = true)
+            )
                 .jvmModifiers(variableElement.modifiers)
         }
         //                                if (annotationMirrors.isNotEmpty()) {
@@ -350,7 +378,8 @@ class CustomProcessor : AbstractProcessor() {
                     MUTABLE_LIST.parameterizedBy(
                         *typeArguments.map {
                             it.javaToKotlinType()
-                        }.toTypedArray()                    )
+                        }.toTypedArray()
+                    )
                 }
 
                 is WildcardTypeName -> {
@@ -398,10 +427,14 @@ class CustomProcessor : AbstractProcessor() {
             return
         }
         try {
-            val fieldBuild: PropertySpec.Builder = PropertySpec.builder("apiMap",
-                LinkedHashMap::class.asClassName().parameterizedBy(String::class.asClassName(), Any::class
-                    .asClassName()),
-                KModifier.PRIVATE)
+            val fieldBuild: PropertySpec.Builder = PropertySpec.builder(
+                "apiMap",
+                LinkedHashMap::class.asClassName().parameterizedBy(
+                    Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class)), Any::class
+                        .asClassName()
+                ),
+                KModifier.PRIVATE
+            )
             fieldBuild.initializer("LinkedHashMap()")
             val builder: CodeBlock.Builder = CodeBlock.builder()
             val enclosingElements = typeElementListMap!!.keys
@@ -415,12 +448,16 @@ class CustomProcessor : AbstractProcessor() {
                 }
                 if (lazyInit != null) {
                     if (!lazyInit.value) {
-                        builder.addStatement("apiMap.put(%S,%L())", key.qualifiedName.toString(),
-                            cls)
+                        builder.addStatement(
+                            "apiMap.put(%T::class.java,%L())", ClassName("", key.qualifiedName.toString()),
+                            cls
+                        )
                     }
                 } else {
-                    builder.addStatement("apiMap.put(%S,%L())", key.qualifiedName.toString(),
-                        cls)
+                    builder.addStatement(
+                        "apiMap.put(%T::class.java,%L())", ClassName("", key.qualifiedName.toString()),
+                        cls
+                    )
                 }
             }
             val initApi: FunSpec = FunSpec.builder("initApi")
@@ -436,24 +473,29 @@ class CustomProcessor : AbstractProcessor() {
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
                 .returns(Any::class.asClassName().copy(nullable = true))
                 .addKdoc("获取api,可能为空")
-                .addParameter("cls",
-                    Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class)))
-                .addStatement("var clsName = cls.getCanonicalName()!!\n" +
-                    "        var api = apiMap.get(clsName)\n" +
-                    "        return api")
+                .addParameter(
+                    "cls",
+                    Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                )
+                .addStatement(
+                    "return apiMap.get(cls)"
+                )
                 .build()
             val removeApi: FunSpec = FunSpec.builder("removeApi")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                .addParameter("cls",
-                    Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class)))
+                .addParameter(
+                    "cls",
+                    Class::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                )
                 .addKdoc("移除api接口")
                 .returns(Boolean::class)
-                .addStatement("var clsName=cls.getCanonicalName()\n" +
-                    "      if(apiMap.containsKey(clsName)){\n" +
-                    "            apiMap.remove(clsName)\n" +
-                    "            return true\n" +
-                    "        }\n" +
-                    "        return false")
+                .addStatement(
+                    "      if(apiMap.containsKey(cls)){\n" +
+                        "            apiMap.remove(cls)\n" +
+                        "            return true\n" +
+                        "        }\n" +
+                        "        return false"
+                )
                 .build()
             val factoryBuilder: TypeSpec.Builder = TypeSpec.classBuilder("SmartFlyperFactory__$moduleName")
                 .addModifiers(KModifier.PUBLIC)
@@ -489,39 +531,50 @@ class CustomProcessor : AbstractProcessor() {
             val typeArguments: List<TypeMirror> = declaredType.typeArguments
             //string,observale类型才合理
             if (typeMirror.asTypeName() == String::class.java.asClassName()) {
-                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java",
-                    typeMirror.asTypeName())
+                methdSpecBuilder.addStatement(
+                    "wrapperMethod.returnTypeParams=%L::class.java",
+                    typeMirror.asTypeName()
+                )
             } else if (typeMirror.asTypeName().javaToKotlinType() == Any::class.asClassName()) { //suspend函数
                 note("checkAndGenerateCode ${typeMirror.asTypeName()} is suspend function ")
-                methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%L::class.java", returnTypeName
-                    .toString().replace("?", "")) //删除可空类型的问号
+                methdSpecBuilder.addStatement(
+                    "wrapperMethod.returnTypeParams=%L::class.java", returnTypeName
+                        .toString().replace("?", "")
+                ) //删除可空类型的问号
             } else if (typeArguments.size == 1) {
                 if (erasureType == OBSERVABLE_TYPE || erasureType == CHANNEL_TYPE) { //channel类型
                     //判断参数是否为string或者BaseEntity或子类行
                     val returnParameterType: TypeMirror = typeArguments[0]
                     val erasureParamers = erasureType(returnParameterType)
                     if (erasureParamers == String::class.java.canonicalName || erasureParamers == BASEENTITY_TYPE
-                        || isSubtypeOfType(returnParameterType, BASEENTITY_TYPE)) {
-                        methdSpecBuilder.addStatement("wrapperMethod.returnTypeParams=%T::class.java",
-                            returnParameterType.asTypeName())
+                        || isSubtypeOfType(returnParameterType, BASEENTITY_TYPE)
+                    ) {
+                        methdSpecBuilder.addStatement(
+                            "wrapperMethod.returnTypeParams=%T::class.java",
+                            returnParameterType.asTypeName()
+                        )
                     } else {
                         error(
-                            " >>>>>1 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
+                            " >>>>>1 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder"
+                        )
                         error("$errorReturnInfo >>>>>1")
                     }
                 } else {
                     error(
-                        " >>>>>2 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
+                        " >>>>>2 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder"
+                    )
                     error("$errorReturnInfo >>>>>2")
                 }
             } else {
                 error(
-                    " >>>>>3 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
+                    " >>>>>3 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder"
+                )
                 error("$errorReturnInfo >>>>>3")
             }
         } else {
             error(
-                " >>>>>4 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder")
+                " >>>>>4 typeMirror :$typeMirror , returnTypeName : $returnTypeName , methdSpecBuilder: $methdSpecBuilder"
+            )
             error("$errorReturnInfo >>>>>4")
         }
     }
@@ -535,7 +588,8 @@ class CustomProcessor : AbstractProcessor() {
         val isSmartBroadCast2 = smartBroadCast2 != null
         if (!isSmartBroadCast2) {
             methdSpecBuilder.addStatement(
-                "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size)
+                "var paramEntities = arrayOfNulls<com.yy.core.yyp.smart.ParamEntity>(%L)", size
+            )
             methdSpecBuilder.addStatement("var args = arrayOfNulls<Any>(%L)", size)
         }
         val parameterSpecs: MutableList<ParameterSpec> = ArrayList()
@@ -545,16 +599,22 @@ class CustomProcessor : AbstractProcessor() {
             val smartMap: SmartMap? = parameter.getAnnotation(SmartMap::class.java)
             val smartJson: SmartJson? = parameter.getAnnotation(SmartJson::class.java)
             if (smartParam != null) {
-                methdSpecBuilder.addStatement("paramEntities[%L]=%T(%L, %S)", i, ParamEntity::class.java,
-                    ParamEntity.SMARTPARAM, smartParam.value)
+                methdSpecBuilder.addStatement(
+                    "paramEntities[%L]=%T(%L, %S)", i, ParamEntity::class.java,
+                    ParamEntity.SMARTPARAM, smartParam.value
+                )
             }
             if (smartMap != null) {
-                methdSpecBuilder.addStatement("paramEntities[%L]=%T(%L, \"\")", i, ParamEntity::class.java,
-                    ParamEntity.SMARTMAP)
+                methdSpecBuilder.addStatement(
+                    "paramEntities[%L]=%T(%L, \"\")", i, ParamEntity::class.java,
+                    ParamEntity.SMARTMAP
+                )
             }
             if (smartJson != null) {
-                methdSpecBuilder.addStatement("paramEntities[%L]=%T(%L, \"\")", i, ParamEntity::class.java,
-                    ParamEntity.SMARTJSON)
+                methdSpecBuilder.addStatement(
+                    "paramEntities[%L]=%T(%L, \"\")", i, ParamEntity::class.java,
+                    ParamEntity.SMARTJSON
+                )
             }
             val varType = parameter.asType()
 
@@ -629,9 +689,13 @@ class CustomProcessor : AbstractProcessor() {
                 val methodParamTypeErasure = erasureType(methodParamType)
                 if (methodParamTypeErasure == String::class.java.canonicalName
                     || methodParamTypeErasure == BASEENTITY_TYPE || isSubtypeOfType(
-                        methodParamType, BASEENTITY_TYPE)) {
-                    methdSpecBuilder.addStatement("wrapperMethod.paramsTypes=%T::class.java",
-                        methodParamType.asTypeName())
+                        methodParamType, BASEENTITY_TYPE
+                    )
+                ) {
+                    methdSpecBuilder.addStatement(
+                        "wrapperMethod.paramsTypes=%T::class.java",
+                        methodParamType.asTypeName()
+                    )
                 } else {
                     error("参数必须是SmartObservelResult<T>,T is String or BaseEntity类型")
                 }

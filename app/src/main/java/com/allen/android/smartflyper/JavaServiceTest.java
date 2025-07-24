@@ -12,7 +12,7 @@ import io.reactivex.Observable;
  * Author:
  * Description:
  */
-class JavaServiceTest {
+public class JavaServiceTest {
 
     public static final String TAG = "JavaServiceTest";
 
@@ -20,7 +20,7 @@ class JavaServiceTest {
         Log.d(TAG, "doWork: >>>>>>>>>");
     }
 
-    interface IJavaService {
+    public interface IJavaService {
         @SmartUri(max = 101, req = 312, rsp = 313, appId = 60015)
         Observable<String> roomInfo(@SmartParam("sid") long sid);
     }
