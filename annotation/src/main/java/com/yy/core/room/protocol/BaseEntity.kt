@@ -1,25 +1,19 @@
-package com.yy.core.room.protocol;
-
-import org.jetbrains.annotations.Nullable;
+package com.yy.core.room.protocol
 
 /**
  * Created by liyong on 2017/5/29.
  */
+open class BaseEntity {
+    var result: Int = 0
+    var msg: String? = ""
 
-public class BaseEntity {
-    public int result = 0;
-    @Nullable
-    public String msg = "";
+    val isSuccess: Boolean
+        get() = result == 0
 
-    public boolean isSuccess() {
-        return result == 0;
-    }
-
-    @Override
-    public String toString() {
+    override fun toString(): String {
         return "BaseEntity{" +
             "result=" + result +
             ", msg='" + msg + '\'' +
-            '}';
+            '}'
     }
 }
