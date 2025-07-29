@@ -7,8 +7,9 @@ open class BaseEntity {
     var result: Int = 0
     var msg: String? = ""
 
-    val isSuccess: Boolean
-        get() = result == 0
+    open fun isSuccess(): Boolean {
+        return result == 0
+    }
 
     override fun toString(): String {
         return "BaseEntity{" +
