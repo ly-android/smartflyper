@@ -11,4 +11,8 @@ class UserEntity : BaseEntity() {
     var name: String? = null
     var uid: Long = 0
     var iconUrl: String? = ""
+
+    override fun toString(): String {
+        return super.toString()
+    }
 }

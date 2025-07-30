@@ -10,9 +10,8 @@ open class BaseEntity {
     @JvmField
     var msg: String? = ""
 
-    open fun isSuccess(): Boolean {
-        return result == 0
-    }
+    val isSuccess: Boolean
+        get() = result == 0
 
     override fun toString(): String {
         return "BaseEntity{" +
