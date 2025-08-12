@@ -12,6 +12,11 @@ public class UserEntity2 extends BaseEntity {
     int age=10;
 
     @Override
+    public boolean isSuccess() {
+        return super.isSuccess();
+    }
+
+    @Override
     public String toString() {
         return "UserEntity2{" +
             "age=" + age +

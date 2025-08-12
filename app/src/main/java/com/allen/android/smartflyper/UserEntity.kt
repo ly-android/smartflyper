@@ -12,6 +12,10 @@ class UserEntity : BaseEntity() {
     var uid: Long = 0
     var iconUrl: String? = ""
 
+    override fun isSuccess(): Boolean {
+        return super.isSuccess()
+    }
+
     override fun toString(): String {
         return super.toString()
     }
